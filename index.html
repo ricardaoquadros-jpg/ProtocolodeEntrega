@@ -56,15 +56,18 @@
 
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h2 class="text-lg font-bold text-slate-800 mb-1">Dados do Recebedor</h2>
-            <p class="text-sm text-slate-500 mb-4">Informações da pessoa que está recebendo os bens.</p>
+            <p class="text-sm text-slate-500 mb-4">Informações da pessoa que está recebendo os
+                bens.</p>
 
             <div class="space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Nome Completo</label>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Nome
+                        Completo</label>
                     <div class="relative">
                         <svg class="w-5 h-5 input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
+                            </path>
                         </svg>
                         <input type="text" id="nome" placeholder="Ex: João da Silva" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
          text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
@@ -118,7 +121,8 @@
 
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h2 class="text-lg font-bold text-slate-800 mb-1">Lista de Patrimônios</h2>
-            <p class="text-sm text-slate-500 mb-4">Liste todos os itens que estão sendo entregues.</p>
+            <p class="text-sm text-slate-500 mb-4">Liste todos os itens que estão sendo
+                entregues.</p>
 
             <div id="lista-patrimonios" class="space-y-3 mb-4">
                 <div class="patrimonio-item grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
@@ -127,7 +131,8 @@
                         <div class="relative">
                             <svg class="w-5 h-5 input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4">
+                                </path>
                             </svg>
                             <input type="text" name="patrimonio_cod" placeholder="Novo Patrimônio"
                                 class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block pl-12 pr-3 py-2 shadow-sm">
@@ -164,7 +169,8 @@
 
             <div
                 class="relative border-2 border-dashed border-indigo-200 bg-indigo-50 rounded-lg h-48 flex items-center justify-center">
-                <div class="absolute pointer-events-none text-indigo-300 font-medium select-none">Assine aqui</div>
+                <div class="absolute pointer-events-none text-indigo-300 font-medium select-none">
+                    Assine aqui</div>
                 <canvas id="signature-pad" class="w-full h-full absolute top-0 left-0 rounded-lg"></canvas>
 
                 <button onclick="limparAssinatura()"
@@ -183,7 +189,8 @@
             <button class="text-indigo-400 hover:text-indigo-600 font-medium text-sm flex items-center gap-2 px-4 py-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
+                    </path>
                 </svg>
                 Gerar PDF (Preview)
             </button>
@@ -305,9 +312,35 @@
         }
 
         // 4. Função Geradora de PDF (Client-side)
-        // Substitua a função existente no index.html por esta:
-        // O LINK DA SUA LOGO DEVE SER COLOCADO AQUI:
         const LOGO_PREFEITURA_URL = 'https://i.imgur.com/Hi25PGf.jpeg';
+
+        // Função para enviar o PDF por e-mail
+        async function enviarPDFPorEmail(blobPDF, dados, idProtocolo) {
+            const formData = new FormData();
+            formData.append('pdf', blobPDF, 'protocolo.pdf');
+            formData.append('email', dados.email);
+            formData.append('nome', dados.nome);
+            formData.append('id_protocolo', idProtocolo);
+
+            try {
+                const response = await fetch('enviar_email.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log('E-mail enviado com sucesso!');
+                    alert('PDF gerado e enviado por e-mail com sucesso!');
+                } else {
+                    console.error('Erro no envio:', result.message);
+                    alert('PDF gerado, mas houve um erro ao enviar o e-mail: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Erro de rede:', error);
+                alert('Erro ao tentar enviar o e-mail.');
+            }
+        }
 
         // A função agora é 'async' para esperar as imagens
         async function gerarPDF(dados, dataHora, idProtocolo) {
@@ -315,7 +348,7 @@
             const doc = new jsPDF();
 
             const larguraPagina = doc.internal.pageSize.getWidth();
-            const alturaPagina = doc.internal.pageSize.getHeight(); // Pega a altura da página (A4)
+            const alturaPagina = doc.internal.pageSize.getHeight();
             const corIndigo = [67, 56, 202];
             let y = 15;
 
@@ -405,9 +438,8 @@
             doc.setDrawColor(150);
             doc.rect(10, y, 100, 40);
 
-            // Adiciona a imagem, centralizando e ajustando ao tamanho da caixa (100x40)
+            // Adiciona a imagem
             if (dados.assinatura) {
-                // CORREÇÃO: Espera o carregamento da assinatura
                 await new Promise((resolve) => {
                     const img = new Image();
                     img.onload = function () {
@@ -431,37 +463,46 @@
             doc.setFont("helvetica", "normal");
             doc.text("Este documento é uma via de protocolo gerada pelo sistema e possui validade legal.", larguraPagina / 2, y, null, null, "center");
 
-
-            // --- 6. LOGO DA PREFEITURA (CANTO INFERIOR DIREITO) ---
+            // --- 6. LOGO DA PREFEITURA ---
             const MARGEM = 15;
-            const LOGO_WIDTH = 50; // Largura do logo (em mm)
-            const LOGO_HEIGHT = 50; // Altura do logo (em mm)
-
-            // Calcula a posição no canto inferior direito
+            const LOGO_WIDTH = 50;
+            const LOGO_HEIGHT = 50;
             const xLogo = larguraPagina - LOGO_WIDTH - MARGEM;
             const yLogo = alturaPagina - LOGO_HEIGHT - MARGEM;
 
             if (LOGO_PREFEITURA_URL) {
-                // CORREÇÃO: Espera o carregamento da logo da prefeitura
                 await new Promise((resolve) => {
                     const logo = new Image();
-                    // Crucial para carregar imagens externas no canvas/jsPDF
                     logo.crossOrigin = 'Anonymous';
-
                     logo.onload = function () {
                         doc.addImage(logo, 'PNG', xLogo, yLogo, LOGO_WIDTH, LOGO_HEIGHT);
                         resolve();
                     };
                     logo.onerror = function () {
-                        console.warn('Falha ao carregar a logo da Prefeitura. Verifique o link e as permissões CORS.');
+                        console.warn('Falha ao carregar a logo da Prefeitura.');
                         resolve();
                     };
                     logo.src = LOGO_PREFEITURA_URL;
                 });
             }
 
-
             doc.save(`protocolo_${idProtocolo}.pdf`);
+
+            // --- ENVIAR EMAIL ---
+            if (dados.email && dados.email.trim() !== '') {
+                // Feedback visual
+                const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
+                if (btn) {
+                    const originalText = btn.innerText;
+                    btn.innerText = 'Enviando E-mail...';
+                    const pdfBlob = doc.output('blob');
+                    await enviarPDFPorEmail(pdfBlob, dados, idProtocolo);
+                    btn.innerText = originalText;
+                } else {
+                    const pdfBlob = doc.output('blob');
+                    await enviarPDFPorEmail(pdfBlob, dados, idProtocolo);
+                }
+            }
         }
     </script>
 </body>

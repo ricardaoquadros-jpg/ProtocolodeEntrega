@@ -1,5 +1,6 @@
 <?php
 header('Content-Type: application/json');
+date_default_timezone_set('America/Sao_Paulo');
 
 // CONFIGURAÇÃO DO BANCO DE DADOS (EDITE AQUI)
 $host = 'localhost';
@@ -37,11 +38,6 @@ if ($stmt->execute()) {
     }
 
     echo json_encode(['success' => true, 'id' => $protocolo_id, 'data' => date('d/m/Y H:i:s')]);
-
-    // --- ENVIAR EMAIL AUTOMÁTICO ---
-    require_once 'enviar_email.php';
-    $dataHora = date('d/m/Y H:i:s');
-    enviarEmailProtocolo($input['email'], $input['nome'], $protocolo_id, $dataHora);
 
 } else {
     echo json_encode(['success' => false, 'message' => 'Erro ao salvar protocolo: ' . $stmt->error]);
