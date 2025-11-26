@@ -132,33 +132,34 @@ O projeto foi criado inteiramente utilizando **Google AI Studio**, **Gemini 3 Pr
 
 ```mermaid
 flowchart LR
-    subgraph User["👤 Cidadão"]
-        A1[Preenche Formulário]
-        A2[Assina no Canvas]
-        A3[Envia Dados]
+
+    subgraph User["Cidadão"]
+        A1["Preenche Formulário"]
+        A2["Assina no Canvas"]
+        A3["Envia Dados"]
     end
 
-    subgraph Frontend["🌐 Frontend<br>HTML | CSS | JS"]
-        F1[Captura dos Dados]
-        F2[Assinatura Digital Base64]
-        F3[Geração do PDF<br>JS/PDF Library]
+    subgraph Frontend["Frontend (HTML, CSS, JS)"]
+        F1["Captura dos Dados"]
+        F2["Assinatura Digital Base64"]
+        F3["Geração do PDF (JavaScript)"]
     end
 
-    subgraph Backend["💻 Backend PHP"]
-        B1[API Registrar Protocolo]
-        B2[API Gerar Log]
-        B3[Enviar PDF com PHPMailer]
+    subgraph Backend["Backend PHP"]
+        B1["API Registrar Protocolo"]
+        B2["API Gerar Log"]
+        B3["Enviar PDF com PHPMailer"]
     end
 
-    subgraph Database["🗄️ Banco MySQL"]
-        D1[(Tabela Protocolos)]
-        D2[(Tabela Usuários)]
+    subgraph Database["Banco MySQL"]
+        D1["Tabela Protocolos"]
+        D2["Tabela Usuários"]
     end
 
-    subgraph Admin["🖥️ Painel Administrativo"]
-        P1[Login do Funcionário]
-        P2[Dashboard]
-        P3[Monitoramento de Protocolos]
+    subgraph Admin["Painel Administrativo"]
+        P1["Login do Funcionário"]
+        P2["Dashboard"]
+        P3["Monitoramento de Protocolos"]
     end
 
     %% Fluxo principal
@@ -176,7 +177,8 @@ flowchart LR
     P3 --> D1
 
     %% Email
-    B3 --> EMail[📧 Envio do PDF para o Cidadão]
+    B3 --> EMail["Envio do PDF para o Cidadão"]
+
 
 ## 🧑‍💻 Autor
 
