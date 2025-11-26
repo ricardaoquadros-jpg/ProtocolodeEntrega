@@ -180,12 +180,11 @@ flowchart LR
     B3 --> EMail["Envio do PDF para o Cidadão"]
 ```
 
-
 ## 🧑‍💻 Autor
 
 **Ricardo Quadros**  
 Estudante de Engenharia da Computação na UERGS
-Técnico em Informática na Dr. Solon Tavares 
+Técnico em Informática na Dr. Solon Tavares
 Estagiário de Tecnologia e Informação – Prefeitura de Guaíba
 Guaíba, RS – Brasil
 
