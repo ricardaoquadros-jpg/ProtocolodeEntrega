@@ -81,22 +81,39 @@ O projeto foi criado inteiramente utilizando **Google AI Studio**, **Gemini 3 Pr
 ## 📁 Estrutura Geral do Projeto
 /
 ├─ public/
+
 │ ├─ index.html
+
 │ ├─ form/
+
 │ ├─ js/
+
 │ ├─ css/
+
 │ └─ pdf/
+
 │
+
 ├─ backend/
+
 │ ├─ conexao.php
+
 │ ├─ registrar_protocolo.php
+
 │ ├─ enviar_email.php
+
 │ ├─ phpmailer/
+
 │ └─ admin/
+
 │ ├─ login.php
+
 │ ├─ dashboard.php
+
 │ └─ protocolos.php
+
 │
+
 └─ README.md
 
 ---
