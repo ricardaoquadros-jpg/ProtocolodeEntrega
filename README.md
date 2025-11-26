@@ -183,16 +183,15 @@ flowchart LR
 ## 🧑‍💻 Autor
 
 **Ricardo Quadros**  
-- Estudante de Engenharia da Computação na UERGS
-- Técnico em Informática na Dr. Solon Tavares
-- Estagiário de Tecnologia e Informação – Prefeitura de Guaíba
-Guaíba, RS – Brasil
+- Estudante de Engenharia da Computação na UERGS  
+- Técnico em Informática na Dr. Solon Tavares 
+- Estagiário de Tecnologia e Informação – Prefeitura de Guaíba  
+- Guaíba, RS – Brasil
 
 ---
 
 ## 📫 Contato
 
-- GitHub: https://github.com/ricardaoquadros-jpg
+- GitHub: https://github.com/ricardaoquadros-jpg  
 - Email: ricardaoquadros@gmail.com
 - Linkedin: https://www.linkedin.com/in/ricardopquadros/
-****
