@@ -22,8 +22,8 @@ if (!$input) {
 }
 
 // Inserir Protocolo (Recebedor)
-$stmt = $conn->prepare("INSERT INTO protocolos (nome_recebedor, cpf_matricula, telefone, assinatura_base64) VALUES (?, ?, ?, ?)");
-$stmt->bind_param("ssss", $input['nome'], $input['cpf'], $input['telefone'], $input['assinatura']);
+$stmt = $conn->prepare("INSERT INTO protocolos (nome_recebedor, cpf_matricula, telefone, email, assinatura_base64) VALUES (?, ?, ?, ?, ?)");
+$stmt->bind_param("sssss", $input['nome'], $input['cpf'], $input['telefone'], $input['email'], $input['assinatura']);
 
 if ($stmt->execute()) {
     $protocolo_id = $stmt->insert_id; // Pega o ID gerado
@@ -37,6 +37,12 @@ if ($stmt->execute()) {
     }
 
     echo json_encode(['success' => true, 'id' => $protocolo_id, 'data' => date('d/m/Y H:i:s')]);
+
+    // --- ENVIAR EMAIL AUTOMÁTICO ---
+    require_once 'enviar_email.php';
+    $dataHora = date('d/m/Y H:i:s');
+    enviarEmailProtocolo($input['email'], $input['nome'], $protocolo_id, $dataHora);
+
 } else {
     echo json_encode(['success' => false, 'message' => 'Erro ao salvar protocolo: ' . $stmt->error]);
 }

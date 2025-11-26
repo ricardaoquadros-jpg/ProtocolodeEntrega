@@ -21,13 +21,13 @@ $term = "";
 
 if (isset($_GET['busca']) && !empty($_GET['busca'])) {
     $term = $conn->real_escape_string($_GET['busca']);
-    // Pesquisa por Nome, CPF ou Patrimônio
-    $where_clause = " WHERE p.nome_recebedor LIKE '%$term%' OR p.cpf_matricula LIKE '%$term%' OR pi.patrimonio_codigo LIKE '%$term%' ";
+    // Pesquisa por Nome, CPF, Patrimônio ou Email
+    $where_clause = " WHERE p.nome_recebedor LIKE '%$term%' OR p.cpf_matricula LIKE '%$term%' OR pi.patrimonio_codigo LIKE '%$term%' OR p.email LIKE '%$term%' ";
 }
 
 // 3. BUSCAR DADOS (JOIN ENTRE PROTOCOLOS E ITENS)
 // Selecionamos tudo e ordenamos por data mais recente
-$sql = "SELECT p.id, p.nome_recebedor, p.cpf_matricula, p.telefone, p.assinatura_base64, p.data_criacao,
+$sql = "SELECT p.id, p.nome_recebedor, p.cpf_matricula, p.telefone, p.email, p.assinatura_base64, p.data_criacao,
                pi.patrimonio_codigo, pi.tipo_equipamento
         FROM protocolos p
         LEFT JOIN protocolo_itens pi ON p.id = pi.protocolo_id
@@ -49,6 +49,7 @@ while ($row = $result->fetch_assoc()) {
                 'nome' => $row['nome_recebedor'],
                 'cpf' => $row['cpf_matricula'],
                 'telefone' => $row['telefone'],
+                'email' => $row['email'],
                 'data' => $row['data_criacao'],
                 'assinatura' => $row['assinatura_base64']
             ],
@@ -65,7 +66,6 @@ while ($row = $result->fetch_assoc()) {
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -178,8 +178,18 @@ while ($row = $result->fetch_assoc()) {
                                     <span class="text-slate-600"><?php echo htmlspecialchars($proto['info']['telefone']); ?></span>
                                 </p>
                                 <p>
+                                    <strong class="text-slate-800">Email:</strong> 
+                                    <span class="text-slate-600"><?php echo htmlspecialchars($proto['info']['email']); ?></span>
+                                </p>
+                                <p>
                                     <strong class="text-slate-800">Data do Registro:</strong> 
                                     <span class="text-slate-600"><?php echo date('d/m/Y, H:i:s', strtotime($proto['info']['data'])); ?></span>
+                                </p>
+                                <p class="mt-2">
+                                    <a href="visualizar_pdf.php?id=<?php echo $id; ?>" target="_blank" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                                        Visualizar PDF
+                                    </a>
                                 </p>
                             </div>
 
