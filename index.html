@@ -207,11 +207,11 @@
 
     </div>
 
-   <script>
-    // Função para sanitizar strings no front-end
-    function limpar(str) {
-        return str.replace(/[<>]/g, "").trim();
-    }
+    <script>
+        // Função para sanitizar strings no front-end
+        function limpar(str) {
+            return str.replace(/[<>]/g, "").trim();
+        }
 
         // 1. Configuração da Assinatura (Canvas)
         const canvas = document.getElementById('signature-pad');
@@ -260,66 +260,66 @@
             container.appendChild(novoItem);
         }
 
-       async function salvarNaNuvem() {
+        async function salvarNaNuvem() {
 
-    const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
-    const originalText = btn ? btn.innerHTML : null;
+            const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
+            const originalText = btn ? btn.innerHTML : null;
 
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = "Salvando...";
-    }
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = "Salvando...";
+            }
 
-    const nome = document.getElementById('nome').value;
-    const cpf = document.getElementById('cpf').value;
-    const telefone = document.getElementById('telefone').value;
-    const email = document.getElementById('email').value;
-    const assinatura = signaturePad.toDataURL();
+            const nome = document.getElementById('nome').value;
+            const cpf = document.getElementById('cpf').value;
+            const telefone = document.getElementById('telefone').value;
+            const email = document.getElementById('email').value;
+            const assinatura = signaturePad.toDataURL();
 
-    const itens = [...document.querySelectorAll('.patrimonio-item')].map(el => ({
-        patrimonio: el.querySelector('input[name="patrimonio_cod"]').value,
-        equipamento: el.querySelector('select[name="equipamento_tipo"]').value
-    }));
+            const itens = [...document.querySelectorAll('.patrimonio-item')].map(el => ({
+                patrimonio: el.querySelector('input[name="patrimonio_cod"]').value,
+                equipamento: el.querySelector('select[name="equipamento_tipo"]').value
+            }));
 
-    const payload = {
-        nome: limpar(nome),
-        cpf: cpf.replace(/\D/g, ""),
-        telefone: telefone.replace(/\D/g, ""),
-        email: email.toLowerCase().trim(),
-        assinatura: assinatura,
-        itens: itens.map(i => ({
-            patrimonio: limpar(i.patrimonio),
-            equipamento: limpar(i.equipamento)
-        }))
-    };
+            const payload = {
+                nome: limpar(nome),
+                cpf: cpf.replace(/\D/g, ""),
+                telefone: telefone.replace(/\D/g, ""),
+                email: email.toLowerCase().trim(),
+                assinatura: assinatura,
+                itens: itens.map(i => ({
+                    patrimonio: limpar(i.patrimonio),
+                    equipamento: limpar(i.equipamento)
+                }))
+            };
 
-    try {
-        const response = await fetch('salvar.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
+            try {
+                const response = await fetch('salvar.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
 
-        const result = await response.json();
+                const result = await response.json();
 
-        if (result.success) {
-            alert("Salvo com sucesso! Gerando PDF...");
-            gerarPDF(payload, result.data, result.id);
-        } else {
-            alert("Erro ao salvar: " + result.message);
+                if (result.success) {
+                    alert("Salvo com sucesso! Gerando PDF...");
+                    gerarPDF(payload, result.data, result.id);
+                } else {
+                    alert("Erro ao salvar: " + result.message);
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("Erro de conexão com o servidor.");
+
+            } finally {
+                if (btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
         }
-
-    } catch (error) {
-        console.error(error);
-        alert("Erro de conexão com o servidor.");
-
-    } finally {
-        if (btn) {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    }
-}
 
 
 

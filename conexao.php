@@ -1,24 +1,22 @@
 <?php
+
 if (!defined('APP_RUNNING')) {
     http_response_code(403);
-    exit('Acesso proibido.');
+    exit("Acesso inválido.");
 }
 
-$DB_HOST = 'localhost';
-$DB_USER = 'root';
-$DB_PASS = ''; 
-$DB_NAME = 'banco'; // <-- confirmado pelo seu protocolos.php
+$host = "localhost";
+$user = "root";
+$pass = "";
+$db   = "banco";
 
-$conn = new mysqli($DB_HOST, $DB_USER, $DB_PASS, $DB_NAME);
+$conn = new mysqli($host, $user, $pass, $db);
 
-if ($conn->connect_errno) {
-    error_log('Erro MySQL: ' . $conn->connect_error);
-    http_response_code(500);
-    die(json_encode([
-        'success' => false,
-        'message' => 'Erro ao conectar ao banco de dados.'
-    ]));
+if ($conn->connect_error) {
+    error_log("ERRO DB: " . $conn->connect_error);
+    exit;
 }
 
-$conn->set_charset('utf8mb4');
+$conn->set_charset("utf8mb4");
+
 ?>

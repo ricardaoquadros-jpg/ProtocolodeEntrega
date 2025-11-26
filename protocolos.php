@@ -1,47 +1,52 @@
 <?php
 session_start();
 
-// 1. SEGURANÇA: Verifica login
+// 1. Segurança
 if (!isset($_SESSION['admin_logado'])) {
     header("Location: login.php");
     exit;
 }
 
-// CONFIGURAÇÃO DO BANCO
+// 2. Ativa permissões para carregar conexao.php
 define('APP_RUNNING', true);
-require __DIR__ . '/conexao.php';
 
-$conn = new mysqli($host, $user, $pass, $db);
+// 3. Carrega a conexão (SEM REPETIR)
+require __DIR__ . "/conexao.php";
 
-// 2. LÓGICA DE PESQUISA E FILTRO
+// 4. Termo de busca
 $where_clause = "";
 $term = "";
 
 if (isset($_GET['busca']) && !empty($_GET['busca'])) {
     $term = $conn->real_escape_string($_GET['busca']);
-    // Pesquisa por Nome, CPF, Patrimônio ou Email
-    $where_clause = " WHERE p.nome_recebedor LIKE '%$term%' OR p.cpf_matricula LIKE '%$term%' OR pi.patrimonio_codigo LIKE '%$term%' OR p.email LIKE '%$term%' ";
+    $where_clause = "
+        WHERE p.nome_recebedor LIKE '%$term%' 
+        OR p.cpf_matricula LIKE '%$term%'
+        OR pi.patrimonio_codigo LIKE '%$term%' 
+        OR p.email LIKE '%$term%'
+    ";
 }
 
-// 3. BUSCAR DADOS (JOIN ENTRE PROTOCOLOS E ITENS)
-// Selecionamos tudo e ordenamos por data mais recente
-$sql = "SELECT p.id, p.nome_recebedor, p.cpf_matricula, p.telefone, p.email, p.assinatura_base64, p.data_criacao,
-               pi.patrimonio_codigo, pi.tipo_equipamento
-        FROM protocolos p
-        LEFT JOIN protocolo_itens pi ON p.id = pi.protocolo_id
-        $where_clause
-        ORDER BY p.data_criacao DESC";
+// 5. Query principal
+$sql = "
+    SELECT 
+        p.id, p.nome_recebedor, p.cpf_matricula, p.telefone, p.email,
+        p.assinatura_base64, p.data_criacao,
+        pi.patrimonio_codigo, pi.tipo_equipamento
+    FROM protocolos p
+    LEFT JOIN protocolo_itens pi ON p.id = pi.protocolo_id
+    $where_clause
+    ORDER BY p.data_criacao DESC
+";
 
 $result = $conn->query($sql);
 
-// 4. AGRUPAMENTO DE DADOS (PHP)
-// Como o JOIN traz linhas repetidas (uma para cada item), vamos agrupar pelo ID do protocolo
+// 6. Agrupamento
 $protocolos = [];
 while ($row = $result->fetch_assoc()) {
     $id = $row['id'];
-    
+
     if (!isset($protocolos[$id])) {
-        // Cria o cabeçalho do protocolo se ainda não existe no array
         $protocolos[$id] = [
             'info' => [
                 'nome' => $row['nome_recebedor'],
@@ -54,9 +59,8 @@ while ($row = $result->fetch_assoc()) {
             'itens' => []
         ];
     }
-    
-    // Adiciona o item à lista deste protocolo
-    if ($row['patrimonio_codigo']) {
+
+    if (!empty($row['patrimonio_codigo'])) {
         $protocolos[$id]['itens'][] = [
             'codigo' => $row['patrimonio_codigo'],
             'tipo' => $row['tipo_equipamento']
