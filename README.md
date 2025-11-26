@@ -183,9 +183,9 @@ flowchart LR
 ## 🧑‍💻 Autor
 
 **Ricardo Quadros**  
-Estudante de Engenharia da Computação na UERGS
-Técnico em Informática na Dr. Solon Tavares
-Estagiário de Tecnologia e Informação – Prefeitura de Guaíba
+- Estudante de Engenharia da Computação na UERGS
+- Técnico em Informática na Dr. Solon Tavares
+- Estagiário de Tecnologia e Informação – Prefeitura de Guaíba
 Guaíba, RS – Brasil
 
 ---
