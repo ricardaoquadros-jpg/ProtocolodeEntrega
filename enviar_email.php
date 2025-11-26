@@ -1,107 +1,55 @@
 <?php
+define('APP_RUNNING', true);
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 require __DIR__ . '/vendor/autoload.php';
+require __DIR__ . '/utils/seguranca.php';
 
-// --- LÓGICA DE RECEBIMENTO DO POST ---
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    header('Content-Type: application/json');
+date_default_timezone_set('America/Sao_Paulo');
 
-    // Verifica se os dados necessários foram enviados
-    if (!isset($_FILES['pdf']) || !isset($_POST['email']) || !isset($_POST['nome'])) {
-        echo json_encode(['success' => false, 'message' => 'Dados incompletos.']);
-        exit;
-    }
+$email = limparEmail($_POST['email'] ?? '');
+$nome  = limparTexto($_POST['nome'] ?? '');
 
-    $email = $_POST['email'];
-    $nome = $_POST['nome'];
-    $idProtocolo = $_POST['id_protocolo'] ?? 'N/A'; // Recebe o ID ou usa padrão
-    $pdfFile = $_FILES['pdf'];
-    $dataHora = date('d/m/Y H:i:s');
-
-    // Chama a função de envio
-    $resultado = enviarEmailProtocolo($email, $nome, $idProtocolo, $dataHora, $pdfFile);
-
-    echo json_encode($resultado);
-    exit;
+if (!$email) {
+    exit(json_encode(['success' => false, 'message' => 'E-mail inválido']));
 }
 
-function enviarEmailProtocolo($destinatarioEmail, $destinatarioNome, $idProtocolo, $dataHora, $pdfFile, $debug = false) {
+$mail = new PHPMailer(true);
 
-    date_default_timezone_set('America/Sao_Paulo'); 
+try {
+    $mail->isSMTP();
+    $mail->Host       = 'smtp.guaiba.local';
+    $mail->SMTPAuth   = false;
+    $mail->Port       = 25;
 
-    if (empty($destinatarioEmail)) {
-        return ['success' => false, 'message' => 'E-mail destinatário ausente'];
+    $mail->setFrom('nao-responda@guaiba.rs.gov.br', 'Protocolo TI');
+    $mail->addAddress($email, $nome);
+
+    // Segurança para anexos
+    if (!isset($_FILES['pdf']) || $_FILES['pdf']['error'] !== 0) {
+        throw new Exception("PDF inválido.");
     }
 
-    $mail = new PHPMailer(true);
-    $debugLog = '';
+    $tmp = $_FILES['pdf']['tmp_name'];
 
-    $mail->Debugoutput = function($str, $level) use (&$debugLog) {
-        $debugLog .= $str . "\n";
-    };
-
-    try {
-
-        // SMTP Zimbra interno
-        $mail->SMTPDebug = $debug ? 2 : 0;
-        $mail->isSMTP();
-        $mail->Host = 'smtp.guaiba.local';
-        $mail->SMTPAuth = false;  
-        $mail->Port = 25;
-        $mail->SMTPSecure = false;
-        $mail->SMTPAutoTLS = false;
-
-        // Remetente oficial
-        $mail->setFrom('nao-responda@guaiba.rs.gov.br', 'Sistema de Protocolos');
-
-        // Destinatário
-        $mail->addAddress($destinatarioEmail, $destinatarioNome);
-        $mail->addCC('ti@guaiba.rs.gov.br', 'TI - Guaíba');
-
-        // Assunto
-        $mail->Subject = "Protocolo de Entrega #{$idProtocolo}";
-
-        // Corpo HTML
-        $mail->isHTML(true);
-        $mail->CharSet = 'UTF-8';
-
-        $mail->Body = "
-            <h2 style='font-family: Arial;'>Olá, {$destinatarioNome}!</h2>
-            <p style='font-family: Arial; font-size: 14px;'>
-                Seu protocolo foi gerado com sucesso.
-            </p>
-
-            <p style='font-family: Arial; font-size: 14px;'>
-                <strong>ID do Protocolo:</strong> {$idProtocolo}<br>
-                <strong>Data e Hora:</strong> {$dataHora} (GMT-3)
-            </p>
-
-            <p style='font-family: Arial; font-size: 14px;'>
-                O PDF está anexado a este e-mail.
-            </p>
-
-            <p style='margin-top: 20px; font-family: Arial; font-size: 14px;'>
-                Atenciosamente,<br>
-                <strong>Equipe de TI – Prefeitura de Guaíba</strong>
-            </p>
-        ";
-
-        $mail->AltBody = "Olá {$destinatarioNome}, seu protocolo {$idProtocolo} foi gerado. O PDF está em anexo.";
-
-        // 🔥 ANEXO DO PDF (recebido via upload)
-        if ($pdfFile && is_uploaded_file($pdfFile['tmp_name'])) {
-            $mail->addAttachment($pdfFile['tmp_name'], 'protocolo.pdf');
-        }
-
-        // Enviar
-        $mail->send();
-
-        return ['success' => true, 'message' => 'E-mail enviado com sucesso!', 'debug' => $debugLog];
-
-    } catch (Exception $e) {
-        return ['success' => false, 'message' => $mail->ErrorInfo, 'debug' => $debugLog];
+    // Confirma se é PDF real
+    if (mime_content_type($tmp) !== 'application/pdf') {
+        throw new Exception("Arquivo não é um PDF válido.");
     }
+
+    $mail->addAttachment($tmp, 'protocolo.pdf');
+
+    $mail->isHTML(true);
+    $mail->Subject = "Protocolo Gerado";
+
+    $mail->Body = "<p>Olá, <strong>{$nome}</strong>, seu PDF está em anexo.</p>";
+
+    $mail->send();
+
+    echo json_encode(['success' => true, 'message' => 'E-mail enviado']);
+
+} catch (Exception $e) {
+    echo json_encode(['success' => false, 'message' => "Erro: {$e->getMessage()}"]);
 }
 ?>

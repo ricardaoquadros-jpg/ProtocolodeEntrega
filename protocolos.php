@@ -8,10 +8,8 @@ if (!isset($_SESSION['admin_logado'])) {
 }
 
 // CONFIGURAÇÃO DO BANCO
-$host = 'localhost';
-$db   = 'banco';
-$user = 'root';
-$pass = '';
+define('APP_RUNNING', true);
+require __DIR__ . '/conexao.php';
 
 $conn = new mysqli($host, $user, $pass, $db);
 

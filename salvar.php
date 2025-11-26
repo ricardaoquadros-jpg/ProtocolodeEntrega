@@ -1,47 +1,128 @@
 <?php
-header('Content-Type: application/json');
-date_default_timezone_set('America/Sao_Paulo');
+/** -------------------------------------------------------
+ *  SALVAR.PHP – SEGURO, LIMPO E PRODUÇÃO-READY
+ * --------------------------------------------------------
+ */
 
-// CONFIGURAÇÃO DO BANCO DE DADOS (EDITE AQUI)
-$host = 'localhost';
-$db   = 'banco';
-$user = 'root';
-$pass = '';
+define('APP_RUNNING', true);
 
-$conn = new mysqli($host, $user, $pass, $db);
+/* --- HEADER JSON SEMPRE --- */
+header('Content-Type: application/json; charset=utf-8');
 
-if ($conn->connect_error) {
-    die(json_encode(['success' => false, 'message' => 'Erro de conexão: ' . $conn->connect_error]));
-}
+/* --- LOGAR ERROS SEM EXIBIR NA TELA --- */
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/logs_php_errors.log');
 
-// Recebe o JSON do Javascript
-$input = json_decode(file_get_contents('php://input'), true);
+/* --- ARQUIVOS EXTERNOS --- */
+require_once __DIR__ . '/utils/seguranca.php';
 
-if (!$input) {
-    echo json_encode(['success' => false, 'message' => 'Nenhum dado recebido']);
+/* --- VERIFICA SE conexao.php EXISTE --- */
+if (!file_exists(__DIR__ . '/conexao.php')) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Arquivo de conexão não encontrado.'
+    ]);
     exit;
 }
 
-// Inserir Protocolo (Recebedor)
-$stmt = $conn->prepare("INSERT INTO protocolos (nome_recebedor, cpf_matricula, telefone, email, assinatura_base64) VALUES (?, ?, ?, ?, ?)");
-$stmt->bind_param("sssss", $input['nome'], $input['cpf'], $input['telefone'], $input['email'], $input['assinatura']);
+require_once __DIR__ . '/conexao.php';
 
-if ($stmt->execute()) {
-    $protocolo_id = $stmt->insert_id; // Pega o ID gerado
+/* --- LER JSON RECEBIDO --- */
+$raw = file_get_contents("php://input");
+$input = json_decode($raw, true);
 
-    // Inserir os Itens (Patrimônios)
-    $stmt_item = $conn->prepare("INSERT INTO protocolo_itens (protocolo_id, patrimonio_codigo, tipo_equipamento) VALUES (?, ?, ?)");
-    
-    foreach ($input['itens'] as $item) {
-        $stmt_item->bind_param("iss", $protocolo_id, $item['patrimonio'], $item['equipamento']);
-        $stmt_item->execute();
+if (!is_array($input)) {
+    echo json_encode(['success' => false, 'message' => 'JSON inválido recebido']);
+    exit;
+}
+
+/* --- Sanitização Segura --- */
+$nome       = limparTexto($input['nome'] ?? '');
+$cpf        = limparNumero($input['cpf'] ?? '');
+$telefone   = limparTelefone($input['telefone'] ?? '');
+$email      = limparEmail($input['email'] ?? '');
+$assinatura = $input['assinatura'] ?? '';
+$itens      = limparItens($input['itens'] ?? []);
+
+/* --- Validações --- */
+if (!$nome)    { echo json_encode(['success' => false, 'message' => 'Nome inválido']); exit; }
+if (!$cpf)     { echo json_encode(['success' => false, 'message' => 'CPF/Matrícula inválido']); exit; }
+if (!$email)   { echo json_encode(['success' => false, 'message' => 'E-mail inválido']); exit; }
+
+if (strpos($assinatura, "data:image") !== 0) {
+    echo json_encode(['success' => false, 'message' => 'Assinatura inválida!']); 
+    exit;
+}
+
+/* --- Verifica Conexão --- */
+if (!$conn || $conn->connect_error) {
+    echo json_encode([
+        'success' => false,
+        'message' => 'Erro na conexão com o banco de dados.'
+    ]);
+    exit;
+}
+
+/* -------------------------------------------------------------------
+ *  SALVAR PROTOCOLO NA TABELA `protocolos`
+ * -------------------------------------------------------------------
+ */
+$sql = "INSERT INTO protocolos (nome_recebedor, cpf_matricula, telefone, email, assinatura_base64)
+        VALUES (?, ?, ?, ?, ?)";
+
+$stmt = $conn->prepare($sql);
+
+if (!$stmt) {
+    echo json_encode(['success' => false, 'message' => 'Erro ao preparar comando SQL']);
+    exit;
+}
+
+$stmt->bind_param("sssss", $nome, $cpf, $telefone, $email, $assinatura);
+
+if (!$stmt->execute()) {
+    echo json_encode(['success' => false, 'message' => 'Erro ao salvar no banco']);
+    exit;
+}
+
+$idProtocolo = $stmt->insert_id;
+$stmt->close();
+
+/* -------------------------------------------------------------------
+ *  SALVAR ITENS NA TABELA `protocolo_itens`
+ * -------------------------------------------------------------------
+ */
+if (!empty($itens)) {
+
+    $sqlItem = "INSERT INTO protocolo_itens (protocolo_id, patrimonio_codigo, tipo_equipamento)
+                VALUES (?, ?, ?)";
+
+    $stmt2 = $conn->prepare($sqlItem);
+
+    if ($stmt2) {
+        foreach ($itens as $item) {
+            $codigo = $item['patrimonio'] ?? '';
+            $tipo   = $item['equipamento'] ?? '';
+
+            if ($codigo !== '') {
+                $stmt2->bind_param("iss", $idProtocolo, $codigo, $tipo);
+                $stmt2->execute();
+            }
+        }
+        $stmt2->close();
     }
-
-    echo json_encode(['success' => true, 'id' => $protocolo_id, 'data' => date('d/m/Y H:i:s')]);
-
-} else {
-    echo json_encode(['success' => false, 'message' => 'Erro ao salvar protocolo: ' . $stmt->error]);
 }
 
 $conn->close();
+
+/* --- RETORNO LIMPO (SEM QUALQUER TEXTO ANTES) --- */
+echo json_encode([
+    'success' => true,
+    'id'      => $idProtocolo,
+    'data'    => date('d/m/Y H:i:s')
+]);
+exit;
+
 ?>

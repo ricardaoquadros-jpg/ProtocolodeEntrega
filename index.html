@@ -207,7 +207,12 @@
 
     </div>
 
-    <script>
+   <script>
+    // Função para sanitizar strings no front-end
+    function limpar(str) {
+        return str.replace(/[<>]/g, "").trim();
+    }
+
         // 1. Configuração da Assinatura (Canvas)
         const canvas = document.getElementById('signature-pad');
 
@@ -255,61 +260,68 @@
             container.appendChild(novoItem);
         }
 
-        // 3. Lógica de Salvar na Nuvem e Gerar PDF
-        async function salvarNaNuvem() {
-            if (signaturePad.isEmpty()) {
-                alert("Por favor, assine o documento antes de salvar.");
-                return;
-            }
+       async function salvarNaNuvem() {
 
-            const btn = event.target;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = 'Salvando...';
-            btn.disabled = true;
+    const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
+    const originalText = btn ? btn.innerHTML : null;
 
-            // Coletar dados
-            const nome = document.getElementById('nome').value;
-            const cpf = document.getElementById('cpf').value;
-            const telefone = document.getElementById('telefone').value;
-            const email = document.getElementById('email').value;
-            const assinatura = signaturePad.toDataURL(); // Base64 da imagem
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = "Salvando...";
+    }
 
-            const itensElements = document.querySelectorAll('.patrimonio-item');
-            const itens = [];
-            itensElements.forEach(el => {
-                const pat = el.querySelector('input[name="patrimonio_cod"]').value;
-                const equip = el.querySelector('select[name="equipamento_tipo"]').value;
-                if (pat) itens.push({ patrimonio: pat, equipamento: equip });
-            });
+    const nome = document.getElementById('nome').value;
+    const cpf = document.getElementById('cpf').value;
+    const telefone = document.getElementById('telefone').value;
+    const email = document.getElementById('email').value;
+    const assinatura = signaturePad.toDataURL();
 
-            const payload = { nome, cpf, telefone, email, assinatura, itens };
+    const itens = [...document.querySelectorAll('.patrimonio-item')].map(el => ({
+        patrimonio: el.querySelector('input[name="patrimonio_cod"]').value,
+        equipamento: el.querySelector('select[name="equipamento_tipo"]').value
+    }));
 
-            try {
-                // Enviar para PHP
-                const response = await fetch('salvar.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+    const payload = {
+        nome: limpar(nome),
+        cpf: cpf.replace(/\D/g, ""),
+        telefone: telefone.replace(/\D/g, ""),
+        email: email.toLowerCase().trim(),
+        assinatura: assinatura,
+        itens: itens.map(i => ({
+            patrimonio: limpar(i.patrimonio),
+            equipamento: limpar(i.equipamento)
+        }))
+    };
 
-                const result = await response.json();
+    try {
+        const response = await fetch('salvar.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-                if (result.success) {
-                    alert("Salvo com sucesso! Gerando PDF...");
-                    gerarPDF(payload, result.data, result.id);
-                    // Limpar formulário opcionalmente aqui
-                } else {
-                    alert("Erro ao salvar: " + result.message);
-                }
+        const result = await response.json();
 
-            } catch (error) {
-                console.error(error);
-                alert("Erro de conexão com o servidor.");
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+        if (result.success) {
+            alert("Salvo com sucesso! Gerando PDF...");
+            gerarPDF(payload, result.data, result.id);
+        } else {
+            alert("Erro ao salvar: " + result.message);
         }
+
+    } catch (error) {
+        console.error(error);
+        alert("Erro de conexão com o servidor.");
+
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+}
+
+
 
         // 4. Função Geradora de PDF (Client-side)
         const LOGO_PREFEITURA_URL = 'https://i.imgur.com/Hi25PGf.jpeg';
