@@ -132,7 +132,7 @@ O projeto foi criado inteiramente utilizando **Google AI Studio**, **Gemini 3 Pr
 
 ```mermaid
 flowchart LR
-
+```
     subgraph User["Cidadão"]
         A1["Preenche Formulário"]
         A2["Assina no Canvas"]
