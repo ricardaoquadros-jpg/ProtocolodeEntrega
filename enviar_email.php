@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 function enviarEmailProtocolo($destinatarioEmail, $destinatarioNome, $idProtocolo, $dataHora, $pdfFile, $debug = false) {
 
-    date_default_timezone_set('America/Sao_Paulo'); // GMT-3
+    date_default_timezone_set('America/Sao_Paulo'); 
 
     if (empty($destinatarioEmail)) {
         return ['success' => false, 'message' => 'E-mail destinatário ausente'];
