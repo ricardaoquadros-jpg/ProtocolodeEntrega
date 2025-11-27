@@ -32,7 +32,7 @@ require __DIR__ . '/conexao.php';
     1. BUSCAR PROTOCOLO
 =========================================================== */
 $stmt = $conn->prepare("
-    SELECT nome_recebedor, cpf_matricula, telefone, email, assinatura_base64, data_criacao
+    SELECT nome_recebedor, cpf_matricula, tipo_documento, telefone, email, assinatura_base64, data_criacao
     FROM protocolos WHERE id = ?
 ");
 $stmt->bind_param("i", $id_protocolo);
@@ -67,12 +67,13 @@ while ($row = $res_itens->fetch_assoc()) {
 $data_hora = date('d/m/Y H:i:s', strtotime($proto['data_criacao']));
 
 $dados_js = [
-    "nome"       => $proto["nome_recebedor"],
-    "cpf"        => $proto["cpf_matricula"],
-    "telefone"   => $proto["telefone"],
-    "email"      => $proto["email"],
-    "assinatura" => $proto["assinatura_base64"],
-    "itens"      => $itens
+    "nome"           => $proto["nome_recebedor"],
+    "cpf"            => $proto["cpf_matricula"],
+    "tipo_documento" => $proto["tipo_documento"],
+    "telefone"       => $proto["telefone"],
+    "email"          => $proto["email"],
+    "assinatura"     => $proto["assinatura_base64"],
+    "itens"          => $itens
 ];
 
 ?>
@@ -151,7 +152,13 @@ $dados_js = [
         doc.setFont("helvetica", "normal");
 
         doc.text(`Nome: ${dados.nome}`, 10, y); y += 8;
-        doc.text(`CPF/Matrícula: ${dados.cpf}`, 10, y); y += 8;
+        
+        let labelDoc = "CPF";
+        if (dados.tipo_documento === "matricula") {
+            labelDoc = "Matrícula";
+        }
+        
+        doc.text(`${labelDoc}: ${dados.cpf}`, 10, y); y += 8;
         doc.text(`Telefone: ${dados.telefone}`, 10, y); y += 8;
         doc.text(`Email: ${dados.email || "Não informado"}`, 10, y); y += 10;
 
