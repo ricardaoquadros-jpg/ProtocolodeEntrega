@@ -284,36 +284,58 @@
 
         async function salvarNaNuvem() {
 
-    const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
-    const originalText = btn ? btn.innerHTML : null;
+            const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
+            const originalText = btn ? btn.innerHTML : null;
 
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = "Salvando...";
-    }
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = "Salvando...";
+            }
 
-    const nome = document.getElementById('nome').value.trim();
+            const nome = document.getElementById('nome').value.trim();
 
-    // PEGAR O TIPO DE DOCUMENTO ANTES DE USAR!!
-    const tipoDoc = document.getElementById("tipoDoc").value;
+            // PEGAR O TIPO DE DOCUMENTO ANTES DE USAR!!
+            const tipoDoc = document.getElementById("tipoDoc").value;
 
-    let documento = "";
-    if (tipoDoc === "cpf") {
-        documento = document.getElementById('cpf').value.replace(/\D/g, "");
-    } else {
-        documento = document.getElementById('matricula').value.replace(/\D/g, "");
-    }
+            let documento = "";
+            if (tipoDoc === "cpf") {
+                documento = document.getElementById('cpf').value.replace(/\D/g, "");
+            } else {
+                documento = document.getElementById('matricula').value.replace(/\D/g, "");
+            }
 
-    const telefone = document.getElementById('telefone').value.replace(/\D/g, "");
-    const email = document.getElementById('email').value.trim().toLowerCase();
-    const assinatura = signaturePad.toDataURL();
+            const telefone = document.getElementById('telefone').value.replace(/\D/g, "");
+            const email = document.getElementById('email').value.trim().toLowerCase();
+            const assinatura = signaturePad.toDataURL();
+
+            // Collect all patrimonio items
+            const itens = [];
+            document.querySelectorAll('.patrimonio-item').forEach(item => {
+                const pat = item.querySelector('[name="patrimonio_cod"]');
+                const equip = item.querySelector('[name="equipamento_tipo"]');
+                if (pat && equip && pat.value.trim()) {
+                    itens.push({
+                        patrimonio: pat.value.trim(),
+                        equipamento: equip.value.trim()
+                    });
+                }
+            });
+
+            if (!nome || !documento || !telefone || itens.length === 0) {
+                alert('Por favor, preencha todos os campos obrigatórios e adicione pelo menos um item.');
+                if (btn) {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+                return;
+            }
 
             const payload = {
                 nome: limpar(nome),
                 tipo_documento: tipoDoc,
-                documento: valorDocumento,
-                telefone: telefone.replace(/\D/g, ""),
-                email: email.toLowerCase().trim(),
+                documento: documento,
+                telefone: telefone,
+                email: email,
                 assinatura: assinatura,
                 itens: itens.map(i => ({
                     patrimonio: limpar(i.patrimonio),
@@ -427,25 +449,25 @@
             y += 10;
             // Documento (CPF ou Matrícula)
             // --- Documento (CPF OU Matrícula) ---
-let docLabel = "";
-let docValue = dados.documento;
+            let docLabel = "";
+            let docValue = dados.documento;
 
-// Se CPF → formatar
-if (dados.tipo_documento === "cpf") {
-    docLabel = "CPF: ";
-    
-    // formatação do CPF
-    docValue = docValue.replace(/\D/g, "");
-    if (docValue.length === 11) {
-        docValue = docValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-    }
+            // Se CPF → formatar
+            if (dados.tipo_documento === "cpf") {
+                docLabel = "CPF: ";
 
-} else {
-    docLabel = "Matrícula: ";
-}
+                // formatação do CPF
+                docValue = docValue.replace(/\D/g, "");
+                if (docValue.length === 11) {
+                    docValue = docValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+                }
 
-doc.text(`${docLabel}${docValue}`, 10, y);
-y += 10;
+            } else {
+                docLabel = "Matrícula: ";
+            }
+
+            doc.text(`${docLabel}${docValue}`, 10, y);
+            y += 10;
 
 
             doc.text(`Telefone: ${dados.telefone}`, 10, y);
