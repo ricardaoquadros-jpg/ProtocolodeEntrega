@@ -284,39 +284,29 @@
 
         async function salvarNaNuvem() {
 
-            const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
-            const originalText = btn ? btn.innerHTML : null;
+    const btn = document.querySelector('button[onclick="salvarNaNuvem()"]');
+    const originalText = btn ? btn.innerHTML : null;
 
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = "Salvando...";
-            }
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = "Salvando...";
+    }
 
-            const nome = document.getElementById('nome').value;
-            
+    const nome = document.getElementById('nome').value.trim();
 
+    // PEGAR O TIPO DE DOCUMENTO ANTES DE USAR!!
+    const tipoDoc = document.getElementById("tipoDoc").value;
 
-            if (tipoDoc === "cpf") {
-                documento = document.getElementById('cpf').value.replace(/\D/g, "");
-            } else {
-                documento = document.getElementById('matricula').value.replace(/\D/g, "");
-            }
+    let documento = "";
+    if (tipoDoc === "cpf") {
+        documento = document.getElementById('cpf').value.replace(/\D/g, "");
+    } else {
+        documento = document.getElementById('matricula').value.replace(/\D/g, "");
+    }
 
-            const telefone = document.getElementById('telefone').value;
-            const email = document.getElementById('email').value;
-            const assinatura = signaturePad.toDataURL();
-
-            const itens = [...document.querySelectorAll('.patrimonio-item')].map(el => ({
-                patrimonio: el.querySelector('input[name="patrimonio_cod"]').value,
-                equipamento: el.querySelector('select[name="equipamento_tipo"]').value
-            }));
-
-            const tipoDoc = document.getElementById("tipoDoc").value;
-            let documento = "";
-            const valorDocumento =
-                tipoDoc === "cpf"
-                    ? document.getElementById("cpf").value.replace(/\D/g, "")
-                    : document.getElementById("matricula").value;
+    const telefone = document.getElementById('telefone').value.replace(/\D/g, "");
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const assinatura = signaturePad.toDataURL();
 
             const payload = {
                 nome: limpar(nome),
