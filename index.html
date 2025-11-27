@@ -76,61 +76,53 @@
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-    <!-- Seleção do documento -->
-    <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Documento</label>
-        <select id="tipoDoc" 
-                class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+                    <!-- Seleção do documento -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Documento</label>
+                        <select id="tipoDoc" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
                        text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
-                       block p-2.5 shadow-sm" 
-                onchange="trocarDoc()">
-            <option value="cpf">CPF</option>
-            <option value="matricula">Matrícula</option>
-        </select>
+                       block p-2.5 shadow-sm" onchange="trocarDoc()">
+                            <option value="cpf">CPF</option>
+                            <option value="matricula">Matrícula</option>
+                        </select>
 
-        <!-- Campo CPF -->
-        <div id="campoCPF" class="mt-2">
-            <label class="block text-sm font-medium text-slate-700 mb-1">CPF</label>
-            <div class="relative">
-                <input type="text" id="cpf" maxlength="14" placeholder="000.000.000-00"
-                    class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+                        <!-- Campo CPF -->
+                        <div id="campoCPF" class="mt-2">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">CPF</label>
+                            <div class="relative">
+                                <input type="text" id="cpf" maxlength="14" placeholder="000.000.000-00" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
                            text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
-                           block p-3 shadow-sm"
-                    oninput="mascaraCPF(this)">
-            </div>
-        </div>
+                           block p-3 shadow-sm" oninput="mascaraCPF(this)">
+                            </div>
+                        </div>
 
-        <!-- Campo Matrícula -->
-        <div id="campoMatricula" class="mt-2" style="display:none;">
-            <label class="block text-sm font-medium text-slate-700 mb-1">Matrícula</label>
-            <div class="relative">
-                <input type="text" id="matricula" maxlength="7" placeholder="Ex: 1234567"
-                    class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+                        <!-- Campo Matrícula -->
+                        <div id="campoMatricula" class="mt-2" style="display:none;">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Matrícula</label>
+                            <div class="relative">
+                                <input type="text" id="matricula" maxlength="7" placeholder="Ex: 1234567" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
                            text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
-                           block p-3 shadow-sm"
-                    oninput="mascaraMatricula(this)">
-            </div>
-        </div>
-    </div>
+                           block p-3 shadow-sm" oninput="mascaraMatricula(this)">
+                            </div>
+                        </div>
+                    </div>
 
-    <!-- TELEFONE -->
-    <div>
-        <label class="block text-sm font-medium text-slate-700 mb-1">Telefone</label>
-        <div class="relative">
-            <svg class="w-5 h-5 input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
-                </path>
-            </svg>
+                    <!-- TELEFONE -->
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Telefone</label>
+                        <div class="relative">
+                            <svg class="w-5 h-5 input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z">
+                                </path>
+                            </svg>
 
-            <input type="text" id="telefone" maxlength="14" placeholder="(51)99999-1234"
-                class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+                            <input type="text" id="telefone" maxlength="14" placeholder="(51)99999-1234" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
                        text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
-                       block pl-12 pr-3 py-2 shadow-sm"
-                oninput="mascaraTelefone(this)">
-        </div>
-    </div>
-</div>
+                       block pl-12 pr-3 py-2 shadow-sm" oninput="mascaraTelefone(this)">
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Added Email Field -->
                 <div>
@@ -302,13 +294,13 @@
 
             const nome = document.getElementById('nome').value;
             let documento = "";
-const tipoDoc = document.getElementById('tipoDoc').value;
 
-if (tipoDoc === "cpf") {
-    documento = document.getElementById('cpf').value.replace(/\D/g, "");
-} else {
-    documento = document.getElementById('matricula').value.replace(/\D/g, "");
-}
+
+            if (tipoDoc === "cpf") {
+                documento = document.getElementById('cpf').value.replace(/\D/g, "");
+            } else {
+                documento = document.getElementById('matricula').value.replace(/\D/g, "");
+            }
 
             const telefone = document.getElementById('telefone').value;
             const email = document.getElementById('email').value;
@@ -319,11 +311,16 @@ if (tipoDoc === "cpf") {
                 equipamento: el.querySelector('select[name="equipamento_tipo"]').value
             }));
 
+            const tipoDoc = document.getElementById("tipoDoc").value;
+            const valorDocumento =
+                tipoDoc === "cpf"
+                    ? document.getElementById("cpf").value.replace(/\D/g, "")
+                    : document.getElementById("matricula").value;
+
             const payload = {
                 nome: limpar(nome),
-               documento: documento,
-tipo_documento: tipoDoc,
-
+                tipo_documento: tipoDoc,
+                documento: valorDocumento,
                 telefone: telefone.replace(/\D/g, ""),
                 email: email.toLowerCase().trim(),
                 assinatura: assinatura,
@@ -332,6 +329,7 @@ tipo_documento: tipoDoc,
                     equipamento: limpar(i.equipamento)
                 }))
             };
+
 
             try {
                 const response = await fetch('salvar.php', {
@@ -436,8 +434,30 @@ tipo_documento: tipoDoc,
             // Campos
             doc.text(`Nome: ${dados.nome}`, 10, y);
             y += 10;
-            doc.text(`CPF/Matrícula: ${dados.cpf}`, 10, y);
+            // Documento (CPF ou Matrícula)
+            let docLabel = "";
+            let docValue = "";
+
+            // CPF formatado
+            if (dados.tipo_documento === "cpf") {
+                const v = dados.documento.replace(/\D/g, "");
+                docLabel = "CPF";
+                docValue = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+            }
+            // Matrícula
+            else if (dados.tipo_documento === "matricula") {
+                docLabel = "Matrícula";
+                docValue = dados.documento;
+            }
+            // fallback (caso raro)
+            else {
+                docLabel = "Documento";
+                docValue = dados.documento || "Não informado";
+            }
+
+            doc.text(`${docLabel}: ${docValue}`, 10, y);
             y += 10;
+
             doc.text(`Telefone: ${dados.telefone}`, 10, y);
             y += 10;
             doc.text(`Email: ${dados.email}`, 10, y);
@@ -557,29 +577,29 @@ tipo_documento: tipoDoc,
             }
         }
         function trocarDoc() {
-    const tipo = document.getElementById("tipoDoc").value;
-    document.getElementById("campoCPF").style.display = (tipo === "cpf") ? "block" : "none";
-    document.getElementById("campoMatricula").style.display = (tipo === "matricula") ? "block" : "none";
-}
+            const tipo = document.getElementById("tipoDoc").value;
+            document.getElementById("campoCPF").style.display = (tipo === "cpf") ? "block" : "none";
+            document.getElementById("campoMatricula").style.display = (tipo === "matricula") ? "block" : "none";
+        }
 
-function mascaraCPF(input) {
-    let v = input.value.replace(/\D/g, "").slice(0, 11);
-    if (v.length >= 3) v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    if (v.length >= 6) v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    if (v.length >= 9) v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    input.value = v;
-}
+        function mascaraCPF(input) {
+            let v = input.value.replace(/\D/g, "").slice(0, 11);
+            if (v.length >= 3) v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            if (v.length >= 6) v = v.replace(/(\d{3})(\d)/, "$1.$2");
+            if (v.length >= 9) v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            input.value = v;
+        }
 
-function mascaraMatricula(input) {
-    input.value = input.value.replace(/\D/g, "").slice(0, 7);
-}
+        function mascaraMatricula(input) {
+            input.value = input.value.replace(/\D/g, "").slice(0, 7);
+        }
 
-function mascaraTelefone(input) {
-    let v = input.value.replace(/\D/g, "").slice(0, 11);
-    if (v.length > 2) v = v.replace(/^(\d{2})(\d)/, "($1)$2");
-    if (v.length > 7) v = v.replace(/^(\(\d{2}\))(\d{5})(\d)/, "$1$2-$3");
-    input.value = v;
-}
+        function mascaraTelefone(input) {
+            let v = input.value.replace(/\D/g, "").slice(0, 11);
+            if (v.length > 2) v = v.replace(/^(\d{2})(\d)/, "($1)$2");
+            if (v.length > 7) v = v.replace(/^(\(\d{2}\))(\d{5})(\d)/, "$1$2-$3");
+            input.value = v;
+        }
 
     </script>
 </body>
