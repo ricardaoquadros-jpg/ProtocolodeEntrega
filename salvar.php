@@ -97,8 +97,9 @@ if (!$conn || $conn->connect_error) {
     exit;
 }
 
-$sql = "INSERT INTO protocolos (nome_recebedor, cpf_matricula, tipo_documento, telefone, email, assinatura_base64)
+$sql = "INSERT INTO protocolos (nome_recebedor, documento, tipo_documento, telefone, email, assinatura_base64)
         VALUES (?, ?, ?, ?, ?, ?)";
+
 
 $stmt = $conn->prepare($sql);
 
