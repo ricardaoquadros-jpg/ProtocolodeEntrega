@@ -293,7 +293,7 @@
             }
 
             const nome = document.getElementById('nome').value;
-            let documento = "";
+            
 
 
             if (tipoDoc === "cpf") {
@@ -312,6 +312,7 @@
             }));
 
             const tipoDoc = document.getElementById("tipoDoc").value;
+            let documento = "";
             const valorDocumento =
                 tipoDoc === "cpf"
                     ? document.getElementById("cpf").value.replace(/\D/g, "")
@@ -435,28 +436,27 @@
             doc.text(`Nome: ${dados.nome}`, 10, y);
             y += 10;
             // Documento (CPF ou Matrícula)
-            let docLabel = "";
-            let docValue = "";
+            // --- Documento (CPF OU Matrícula) ---
+let docLabel = "";
+let docValue = dados.documento;
 
-            // CPF formatado
-            if (dados.tipo_documento === "cpf") {
-                const v = dados.documento.replace(/\D/g, "");
-                docLabel = "CPF";
-                docValue = v.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
-            }
-            // Matrícula
-            else if (dados.tipo_documento === "matricula") {
-                docLabel = "Matrícula";
-                docValue = dados.documento;
-            }
-            // fallback (caso raro)
-            else {
-                docLabel = "Documento";
-                docValue = dados.documento || "Não informado";
-            }
+// Se CPF → formatar
+if (dados.tipo_documento === "cpf") {
+    docLabel = "CPF: ";
+    
+    // formatação do CPF
+    docValue = docValue.replace(/\D/g, "");
+    if (docValue.length === 11) {
+        docValue = docValue.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+    }
 
-            doc.text(`${docLabel}: ${docValue}`, 10, y);
-            y += 10;
+} else {
+    docLabel = "Matrícula: ";
+}
+
+doc.text(`${docLabel}${docValue}`, 10, y);
+y += 10;
+
 
             doc.text(`Telefone: ${dados.telefone}`, 10, y);
             y += 10;
