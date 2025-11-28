@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$usuario || !$senha) {
         $erro = "Usuário ou senha inválidos.";
     } else {
-        $sql = "SELECT id, senha_hash FROM usuarios_admin WHERE usuario = ?";
+        $sql = "SELECT id, senha_hash, funcao FROM usuarios_admin WHERE usuario = ?";
         $stmt = $conn->prepare($sql);
 
         if ($stmt) {
@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Login ok
                     $_SESSION['admin_logado'] = true;
                     $_SESSION['admin_id'] = $row['id'];
+                    $_SESSION['funcao'] = $row['funcao'];
 
                     header("Location: dashboard.php");
                     exit;
