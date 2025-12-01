@@ -116,7 +116,7 @@ while ($row = $result->fetch_assoc()) {
             </div>
             <p class="text-sm text-slate-500 mb-4">Use os campos abaixo para encontrar protocolos específicos.</p>
 
-            <form method="GET" action="" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <form method="GET" action="" class="grid grid-cols-1 gap-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-600 mb-1">Pesquisar</label>
                     <div class="relative">
@@ -124,25 +124,6 @@ while ($row = $result->fetch_assoc()) {
                         <input type="text" name="busca" value="<?php echo htmlspecialchars($term); ?>" placeholder="Nome, CPF/matrícula ou patrimônio..." class="w-full bg-indigo-50 border border-indigo-100 text-slate-700 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block pl-9 p-2.5 shadow-sm outline-none">
                     </div>
                 </div>
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Filtrar por período</label>
-                    <select class="w-full bg-indigo-50 border border-indigo-100 text-slate-700 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 shadow-sm outline-none">
-                        <option>Todos</option>
-                        <option>Hoje</option>
-                        <option>Últimos 7 dias</option>
-                        <option>Este Mês</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold text-slate-600 mb-1">Filtrar por data específica</label>
-                    <div class="relative">
-                        <svg class="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        <input type="date" class="w-full bg-indigo-50 border border-indigo-100 text-slate-700 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block pl-9 p-2.5 shadow-sm outline-none text-slate-400">
-                    </div>
-                </div>
-                
                 <button type="submit" class="hidden">Buscar</button>
             </form>
         </div>
