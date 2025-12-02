@@ -48,7 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['admin_id'] = $row['id'];
                     $_SESSION['funcao'] = $row['funcao'];
 
-                    header("Location: dashboard.php");
+                    if ($row['funcao'] === 'Administrador') {
+                        header("Location: dashboard.php");
+                    } else {
+                        header("Location: protocolos.php");
+                    }
                     exit;
                 } else {
                     $erro = "Usuário ou senha incorretos.";
