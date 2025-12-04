@@ -1,33 +1,35 @@
 <?php
-// CONFIGURAÇÃO DO BANCO
-$host = 'localhost';
-$db   = 'banco';
-$user = 'root';
-$pass = '';
+define('APP_RUNNING', true);
+
+/* --- SEGURANÇA E LOGS --- */
+ini_set('display_errors', 0);
+ini_set('display_startup_errors', 0);
+error_reporting(E_ALL);
+ini_set('log_errors', 1);
+ini_set('error_log', __DIR__ . '/logs_php_errors.log');
+
+require_once __DIR__ . '/utils/seguranca.php';
+require __DIR__ . '/conexao.php';
 
 $mensagem = '';
-$tipo_msg = ''; // 'erro' ou 'sucesso'
+$tipo_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $conn = new mysqli($host, $user, $pass, $db);
+    $usuario = limparTexto($_POST['usuario'] ?? '');
+    $senha   = $_POST['senha'] ?? '';
 
-    if ($conn->connect_error) {
-        die("Erro de conexão: " . $conn->connect_error);
-    }
+    // Verifica se usuário já existe
+    $check = $conn->prepare("SELECT id FROM usuarios_admin WHERE usuario = ?");
+    $check->bind_param("s", $usuario);
+    $check->execute();
+    $result = $check->get_result();
 
-    $usuario = $conn->real_escape_string($_POST['usuario']);
-    $senha   = $_POST['senha'];
-
-    // 1. Verifica se usuário já existe
-    $check = $conn->query("SELECT id FROM usuarios_admin WHERE usuario = '$usuario'");
-
-    if ($check->num_rows > 0) {
+    if ($result->num_rows > 0) {
         $mensagem = "Este nome de usuário já está em uso.";
         $tipo_msg = 'erro';
     } else {
-        // 2. Cria o Hash da senha e define cargo padrão
         $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
-        $cargo_padrao = 'Usuário'; // Segurança: Sempre entra com nível baixo
+        $cargo_padrao = 'Usuário';
 
         $stmt = $conn->prepare("INSERT INTO usuarios_admin (usuario, senha_hash, funcao) VALUES (?, ?, ?)");
         $stmt->bind_param("sss", $usuario, $senha_hash, $cargo_padrao);
@@ -35,17 +37,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($stmt->execute()) {
             $mensagem = "Conta criada com sucesso! Redirecionando...";
             $tipo_msg = 'sucesso';
-            // Redireciona para o login após 2 segundos
             header("refresh:2;url=login.php");
         } else {
             $mensagem = "Erro ao criar conta: " . $conn->error;
             $tipo_msg = 'erro';
         }
     }
-    $conn->close();
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -55,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #e0e7ff; } /* Fundo Lilás Claro */
+        body { font-family: 'Inter', sans-serif; background-color: #e0e7ff; }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen p-4">

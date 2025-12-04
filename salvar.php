@@ -2,7 +2,6 @@
 /** -------------------------------------------------------
  *  SALVAR.PHP – CPF / MATRÍCULA + TELEFONE FORMATADOS
  * -------------------------------------------------------- */
-error_log("TESTE DE LOG SALVAR.PHP EXECUTADO");
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
@@ -14,13 +13,6 @@ define('APP_RUNNING', true);
 
 /* --- HEADER JSON --- */
 header('Content-Type: application/json; charset=utf-8');
-
-/* --- LOG DE ERROS --- */
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/logs_php_errors.log');
 
 /* --- IMPORTS --- */
 require_once __DIR__ . '/utils/seguranca.php';
@@ -99,7 +91,6 @@ if (!$conn || $conn->connect_error) {
 
 $sql = "INSERT INTO protocolos (nome_recebedor, cpf_matricula, tipo_documento, telefone, email, assinatura_base64)
         VALUES (?, ?, ?, ?, ?, ?)";
-
 
 $stmt = $conn->prepare($sql);
 
