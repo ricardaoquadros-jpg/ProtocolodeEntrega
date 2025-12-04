@@ -1,9 +1,13 @@
 <?php
-session_start();
-
 define('APP_RUNNING', true);
 
-/* --- SEGURANÇA BÁSICA --- */
+/* --- CONFIGURAÇÃO DE SEGURANÇA --- */
+require_once __DIR__ . '/utils/config_seguranca.php';
+
+session_start();
+aplicarHeadersSeguranca();
+
+/* --- LOGS DE ERRO --- */
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
@@ -25,45 +29,52 @@ $erro = "";
 ---------------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
-    $usuario = limparTexto($_POST['usuario'] ?? '');
-    $senha   = $_POST['senha'] ?? '';
-
-    if (!$usuario || !$senha) {
-        $erro = "Usuário ou senha inválidos.";
+    // Valida CSRF
+    if (!validarCSRF()) {
+        $erro = "Token de segurança inválido. Atualize a página.";
     } else {
-        $sql = "SELECT id, senha_hash, funcao FROM usuarios_admin WHERE usuario = ?";
-        $stmt = $conn->prepare($sql);
+        $usuario = limparTexto($_POST['usuario'] ?? '');
+        $senha   = $_POST['senha'] ?? '';
 
-        if ($stmt) {
-            $stmt->bind_param("s", $usuario);
-            $stmt->execute();
-            $result = $stmt->get_result();
+        if (!$usuario || !$senha) {
+            $erro = "Usuário ou senha inválidos.";
+        } else {
+            $sql = "SELECT id, senha_hash, funcao FROM usuarios_admin WHERE usuario = ?";
+            $stmt = $conn->prepare($sql);
 
-            if ($result && $result->num_rows === 1) {
-                $row = $result->fetch_assoc();
+            if ($stmt) {
+                $stmt->bind_param("s", $usuario);
+                $stmt->execute();
+                $result = $stmt->get_result();
 
-                if (password_verify($senha, $row['senha_hash'])) {
-                    // Login ok
-                    $_SESSION['admin_logado'] = true;
-                    $_SESSION['admin_id'] = $row['id'];
-                    $_SESSION['funcao'] = $row['funcao'];
+                if ($result && $result->num_rows === 1) {
+                    $row = $result->fetch_assoc();
 
-                    if ($row['funcao'] === 'Administrador') {
-                        header("Location: dashboard.php");
+                    if (password_verify($senha, $row['senha_hash'])) {
+                        // Regenera sessão para prevenir session fixation
+                        session_regenerate_id(true);
+                        
+                        $_SESSION['admin_logado'] = true;
+                        $_SESSION['admin_id'] = $row['id'];
+                        $_SESSION['funcao'] = $row['funcao'];
+
+                        if ($row['funcao'] === 'Administrador') {
+                            header("Location: dashboard.php");
+                        } else {
+                            header("Location: protocolos.php");
+                        }
+                        exit;
                     } else {
-                        header("Location: protocolos.php");
+                        $erro = "Usuário ou senha incorretos.";
                     }
-                    exit;
                 } else {
                     $erro = "Usuário ou senha incorretos.";
                 }
-            } else {
-                $erro = "Usuário ou senha incorretos.";
-            }
 
-            $stmt->close();
-        } else {
-            $erro = "Erro interno ao preparar consulta.";
+                $stmt->close();
+            } else {
+                $erro = "Erro interno ao preparar consulta.";
+            }
         }
     }
 }
@@ -103,6 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
     <form method="POST" action="">
+        <?= inputCSRF() ?>
         <div class="space-y-4">
             <div>
                 <label class="block text-sm font-medium text-slate-700 mb-1">Usuário</label>

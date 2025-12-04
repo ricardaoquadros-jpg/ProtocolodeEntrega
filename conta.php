@@ -1,8 +1,13 @@
 <?php
-session_start();
 define('APP_RUNNING', true);
 
-/* --- SEGURANÇA E LOGS --- */
+/* --- CONFIGURAÇÃO DE SEGURANÇA --- */
+require_once __DIR__ . '/utils/config_seguranca.php';
+
+session_start();
+aplicarHeadersSeguranca();
+
+/* --- LOGS DE ERRO --- */
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);

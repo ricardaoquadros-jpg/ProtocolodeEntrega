@@ -1,8 +1,13 @@
 <?php
-session_start();
 define('APP_RUNNING', true);
 
-/* --- SEGURANÇA E LOGS --- */
+/* --- CONFIGURAÇÃO DE SEGURANÇA --- */
+require_once __DIR__ . '/utils/config_seguranca.php';
+
+session_start();
+aplicarHeadersSeguranca();
+
+/* --- LOGS DE ERRO --- */
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
@@ -38,39 +43,42 @@ if (!$user || trim($user['funcao']) !== 'Administrador') {
 $data_inicio = $_GET['data_inicio'] ?? date('Y-m-01');
 $data_fim = $_GET['data_fim'] ?? date('Y-m-t');
 
-/* --- QUERIES --- */
+/* ===============================================
+   QUERIES OTIMIZADAS (7 queries → 4 queries)
+   =============================================== */
 
-// 1. KPIs
-// Total Protocolos
-$sqlTotal = "SELECT COUNT(*) as total FROM protocolos WHERE DATE(data_criacao) BETWEEN '$data_inicio' AND '$data_fim'";
-$resTotal = $conn->query($sqlTotal);
-$totalProtocolos = $resTotal->fetch_assoc()['total'];
+// 1. KPIs UNIFICADOS (4 queries → 1 query)
+$sqlKPIs = "SELECT 
+    COUNT(*) as total_periodo,
+    SUM(DATE(data_criacao) = CURDATE()) as hoje,
+    SUM(YEAR(data_criacao) = YEAR(NOW()) AND MONTH(data_criacao) = MONTH(NOW())) as mes,
+    (SELECT COUNT(*) FROM protocolo_itens) as total_itens
+FROM protocolos 
+WHERE data_criacao BETWEEN ? AND ?";
 
-// Protocolos Hoje
-$sqlHoje = "SELECT COUNT(*) as total FROM protocolos WHERE DATE(data_criacao) = CURDATE()";
-$resHoje = $conn->query($sqlHoje);
-$protocolosHoje = $resHoje->fetch_assoc()['total'];
+$stmtKPIs = $conn->prepare($sqlKPIs);
+$data_inicio_full = $data_inicio . ' 00:00:00';
+$data_fim_full = $data_fim . ' 23:59:59';
+$stmtKPIs->bind_param("ss", $data_inicio_full, $data_fim_full);
+$stmtKPIs->execute();
+$kpis = $stmtKPIs->get_result()->fetch_assoc();
 
-// Protocolos Mês Atual
-$sqlMes = "SELECT COUNT(*) as total FROM protocolos WHERE MONTH(data_criacao) = MONTH(CURDATE()) AND YEAR(data_criacao) = YEAR(CURDATE())";
-$resMes = $conn->query($sqlMes);
-$protocolosMes = $resMes->fetch_assoc()['total'];
+$totalProtocolos = $kpis['total_periodo'] ?? 0;
+$protocolosHoje = $kpis['hoje'] ?? 0;
+$protocolosMes = $kpis['mes'] ?? 0;
+$totalItens = $kpis['total_itens'] ?? 0;
 
-// Total Itens (Geral, independente do filtro de data para ter uma noção do inventário total movimentado)
-$sqlItens = "SELECT COUNT(*) as total FROM protocolo_itens";
-$resItens = $conn->query($sqlItens);
-$totalItens = $resItens->fetch_assoc()['total'];
-
-
-// 2. Gráfico Evolução (Últimos 30 dias ou filtro)
-// Se o filtro for maior que 30 dias, respeita o filtro. Se não, pega os últimos 30 dias para o gráfico padrão.
-// Vamos usar o filtro selecionado para o gráfico também.
+// 2. Gráfico Evolução (com prepared statement)
 $sqlEvolucao = "SELECT DATE(data_criacao) as dia, COUNT(*) as total 
                 FROM protocolos 
-                WHERE DATE(data_criacao) BETWEEN '$data_inicio' AND '$data_fim' 
+                WHERE data_criacao BETWEEN ? AND ?
                 GROUP BY DATE(data_criacao) 
                 ORDER BY dia ASC";
-$resEvolucao = $conn->query($sqlEvolucao);
+$stmtEvolucao = $conn->prepare($sqlEvolucao);
+$stmtEvolucao->bind_param("ss", $data_inicio_full, $data_fim_full);
+$stmtEvolucao->execute();
+$resEvolucao = $stmtEvolucao->get_result();
+
 $evolucaoData = [];
 $evolucaoLabels = [];
 while($row = $resEvolucao->fetch_assoc()) {
@@ -78,13 +86,17 @@ while($row = $resEvolucao->fetch_assoc()) {
     $evolucaoData[] = $row['total'];
 }
 
-// 3. Gráfico Distribuição por Tipo (Baseado no filtro de data dos protocolos)
+// 3. Gráfico Distribuição por Tipo (com prepared statement)
 $sqlDist = "SELECT pi.tipo_equipamento, COUNT(*) as total 
             FROM protocolo_itens pi
             JOIN protocolos p ON pi.protocolo_id = p.id
-            WHERE DATE(p.data_criacao) BETWEEN '$data_inicio' AND '$data_fim'
+            WHERE p.data_criacao BETWEEN ? AND ?
             GROUP BY pi.tipo_equipamento";
-$resDist = $conn->query($sqlDist);
+$stmtDist = $conn->prepare($sqlDist);
+$stmtDist->bind_param("ss", $data_inicio_full, $data_fim_full);
+$stmtDist->execute();
+$resDist = $stmtDist->get_result();
+
 $distLabels = [];
 $distData = [];
 while($row = $resDist->fetch_assoc()) {
@@ -92,7 +104,7 @@ while($row = $resDist->fetch_assoc()) {
     $distData[] = $row['total'];
 }
 
-// 4. Últimos Protocolos
+// 4. Últimos Protocolos (já otimizado com LIMIT)
 $sqlRecentes = "SELECT id, nome_recebedor, data_criacao FROM protocolos ORDER BY data_criacao DESC LIMIT 5";
 $resRecentes = $conn->query($sqlRecentes);
 
