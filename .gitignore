@@ -1,0 +1,20 @@
+# Database backups
+banco.sql
+*.sql
+
+# System files
+Thumbs.db
+.DS_Store
+*.log
+php.ini
+
+# Configuration with credentials
+conexao.php
+
+# Dependencies
+vendor/
+node_modules/
+
+# IDE settings
+.vscode/
+.idea/
