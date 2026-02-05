@@ -11,6 +11,8 @@ ini_set('error_log', __DIR__ . '/logs_php_errors.log');
 
 define('APP_RUNNING', true);
 
+date_default_timezone_set('America/Sao_Paulo');
+
 /* --- HEADER JSON --- */
 header('Content-Type: application/json; charset=utf-8');
 
@@ -41,6 +43,7 @@ $documento       = limparNumero($input['documento'] ?? '');   // Pode ser CPF ou
 $tipoDocumento   = limparTexto($input['tipo_documento'] ?? 'cpf');
 $telefone        = limparTelefone($input['telefone'] ?? '');
 $email           = limparEmail($input['email'] ?? '');
+$observacoes     = limparTexto($input['observacoes'] ?? '');
 $assinatura      = $input['assinatura'] ?? '';
 $itens           = limparItens($input['itens'] ?? []);
 
@@ -84,13 +87,18 @@ if (strpos($assinatura, "data:image") !== 0) {
     SALVAR NO BANCO
    =============================== */
 
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$criadoPor = $_SESSION['admin_id'] ?? null;
+
 if (!$conn || $conn->connect_error) {
     echo json_encode(['success' => false, 'message' => 'Erro na conexão com o banco']);
     exit;
 }
 
-$sql = "INSERT INTO protocolos (nome_recebedor, cpf_matricula, tipo_documento, telefone, email, assinatura_base64)
-        VALUES (?, ?, ?, ?, ?, ?)";
+$sql = "INSERT INTO protocolos (nome_recebedor, cpf_matricula, tipo_documento, telefone, email, observacoes, assinatura_base64, criado_por_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
 $stmt = $conn->prepare($sql);
 
@@ -99,13 +107,15 @@ if (!$stmt) {
     exit;
 }
 
-$stmt->bind_param("ssssss", 
+$stmt->bind_param("sssssssi", 
     $nome, 
     $documento, 
     $tipoDocumento, 
     $telefone, 
     $email, 
-    $assinatura
+    $observacoes,
+    $assinatura,
+    $criadoPor
 );
 
 if (!$stmt->execute()) {
@@ -121,18 +131,19 @@ $stmt->close();
    =============================== */
 
 if (!empty($itens)) {
-    $sql2 = "INSERT INTO protocolo_itens (protocolo_id, patrimonio_codigo, tipo_equipamento)
-             VALUES (?, ?, ?)";
+    $sql2 = "INSERT INTO protocolo_itens (protocolo_id, patrimonio_codigo, tipo_transacao, tipo_equipamento)
+             VALUES (?, ?, ?, ?)";
 
     $stmt2 = $conn->prepare($sql2);
 
     if ($stmt2) {
         foreach ($itens as $item) {
-            $codigo = $item['patrimonio'] ?? '';
-            $tipo   = $item['equipamento'] ?? '';
+            $codigo    = $item['patrimonio'] ?? '';
+            $transacao = $item['transacao'] ?? 'ENTREGA'; // Default if missing
+            $tipo      = $item['equipamento'] ?? '';
 
             if ($codigo !== '') {
-                $stmt2->bind_param("iss", $idProtocolo, $codigo, $tipo);
+                $stmt2->bind_param("isss", $idProtocolo, $codigo, $transacao, $tipo);
                 $stmt2->execute();
             }
         }

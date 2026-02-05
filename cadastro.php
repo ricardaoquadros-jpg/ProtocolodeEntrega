@@ -18,11 +18,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario = limparTexto($_POST['usuario'] ?? '');
     $senha   = $_POST['senha'] ?? '';
 
-    // Verifica se usuário já existe
-    $check = $conn->prepare("SELECT id FROM usuarios_admin WHERE usuario = ?");
-    $check->bind_param("s", $usuario);
-    $check->execute();
-    $result = $check->get_result();
+    // Verify Access Code
+    $codigo_acesso = $_POST['codigo_acesso'] ?? '';
+    // Código de acesso definido no config.php
+    $codigo_secreto = defined('CODIGO_ACESSO_CADASTRO') ? CODIGO_ACESSO_CADASTRO : 'PREFEITURA2024';
+
+    if ($codigo_acesso !== $codigo_secreto) {
+        $mensagem = "Código de acesso inválido!";
+        $tipo_msg = 'erro';
+    } else {
+        // Verifica se usuário já existe
+        $check = $conn->prepare("SELECT id FROM usuarios_admin WHERE usuario = ?");
+        $check->bind_param("s", $usuario);
+        $check->execute();
+        $result = $check->get_result();
 
     if ($result->num_rows > 0) {
         $mensagem = "Este nome de usuário já está em uso.";
@@ -41,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $mensagem = "Erro ao criar conta: " . $conn->error;
             $tipo_msg = 'erro';
+        }
         }
     }
 }
@@ -89,6 +99,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
                     <input type="password" name="senha" required placeholder="********" 
+                        class="w-full bg-indigo-50 border border-indigo-200 text-slate-900 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-3 shadow-sm outline-none transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Código de Acesso (Funcionários)</label>
+                    <input type="password" name="codigo_acesso" required placeholder="Código da Prefeitura" 
                         class="w-full bg-indigo-50 border border-indigo-200 text-slate-900 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-3 shadow-sm outline-none transition-all">
                 </div>
 

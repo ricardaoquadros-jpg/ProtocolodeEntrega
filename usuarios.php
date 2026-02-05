@@ -76,6 +76,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'atualiz
 }
 
 /* ----------------------------------------------------
+   2.1. REQUISIÇÃO AJAX — EXCLUIR USUÁRIO
+---------------------------------------------------- */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'excluir_usuario') {
+    header('Content-Type: application/json');
+
+    $id_alvo = (int) ($_POST['id'] ?? 0);
+
+    if ($id_alvo === $id_usuario_logado) {
+        echo json_encode(['sucesso' => false, 'msg' => 'Você não pode excluir sua própria conta.']);
+        exit;
+    }
+
+    $del = $conn->prepare("DELETE FROM usuarios_admin WHERE id = ?");
+    $del->bind_param("i", $id_alvo);
+
+    if ($del->execute()) {
+        echo json_encode(['sucesso' => true]);
+    } else {
+        echo json_encode(['sucesso' => false, 'msg' => "Erro ao excluir: " . $conn->error]);
+    }
+    exit;
+}
+
+/* ----------------------------------------------------
+   2.2. REQUISIÇÃO AJAX — ALTERAR SENHA
+---------------------------------------------------- */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['acao'] ?? '') === 'alterar_senha') {
+    header('Content-Type: application/json');
+
+    $id_alvo = (int) ($_POST['id'] ?? 0);
+    $nova_senha = $_POST['nova_senha'] ?? '';
+
+    if (empty($nova_senha)) {
+        echo json_encode(['sucesso' => false, 'msg' => 'A nova senha não pode ser vazia.']);
+        exit;
+    }
+
+    $hash = password_hash($nova_senha, PASSWORD_DEFAULT);
+
+    $upd = $conn->prepare("UPDATE usuarios_admin SET senha_hash = ? WHERE id = ?");
+    $upd->bind_param("si", $hash, $id_alvo);
+
+    if ($upd->execute()) {
+        echo json_encode(['sucesso' => true]);
+    } else {
+        echo json_encode(['sucesso' => false, 'msg' => "Erro ao alterar senha: " . $conn->error]);
+    }
+    exit;
+}
+
+/* ----------------------------------------------------
    3. LISTA DE USUÁRIOS
 ---------------------------------------------------- */
 $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORDER BY usuario ASC");
@@ -96,7 +147,7 @@ $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORD
     <!-- Sidebar -->
     <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between shrink-0">
         <div>
-            <a href="index.html" class="h-16 flex items-center px-6 border-b border-slate-100 hover:bg-gray-50 transition-colors">
+            <a href="index.php" class="h-16 flex items-center px-6 border-b border-slate-100 hover:bg-gray-50 transition-colors">
                 <svg class="w-6 h-6 text-indigo-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
@@ -114,6 +165,11 @@ $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORD
                 <a href="protocolos.php" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-900">
                     <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Protocolos
+                </a>
+
+                <a href="emprestimos.php" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-900">
+                    <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                    Empréstimos
                 </a>
 
                 <?php if ($user['funcao'] === 'Administrador'): ?>
@@ -167,7 +223,7 @@ $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORD
                             </td>
 
                             <td class="px-6 py-4">
-                                <?= htmlspecialchars($row['email']); ?>
+                                <?= htmlspecialchars($row['email'] ?? ''); ?>
                             </td>
 
                             <td class="px-6 py-4">
@@ -180,13 +236,23 @@ $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORD
                                 </span>
                             </td>
 
-                            <td class="px-6 py-4 text-right">
+                            <td class="px-6 py-4 text-right flex items-center justify-end gap-2">
                                 <select onchange="alterarCargo(<?= $row['id']; ?>, this.value)"
-                                        class="bg-indigo-50 border border-indigo-100 text-slate-700 text-xs rounded-md p-2 shadow-sm">
+                                        class="bg-indigo-50 border border-indigo-100 text-slate-700 text-xs rounded-md p-2 shadow-sm mr-2">
                                     <option <?= $row['funcao']=='Administrador' ? 'selected' : '' ?>>Administrador</option>
                                     <option <?= $row['funcao']=='Funcionário' ? 'selected' : '' ?>>Funcionário</option>
                                     <option <?= $row['funcao']=='Usuário' ? 'selected' : '' ?>>Usuário</option>
                                 </select>
+
+                                <button onclick="abrirModalSenha(<?= $row['id']; ?>, '<?= htmlspecialchars($row['usuario']); ?>')" 
+                                        class="text-indigo-600 hover:text-indigo-900 p-1" title="Alterar Senha">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 15-5 5 5 5v3l3 3h3a3 3 0 013 3v2h2v-2h2v-2h2a2 2 0 012-2m-6 0a2 2 0 10-4 0 2 2 0 004 0z"></path></svg>
+                                </button>
+
+                                <button onclick="confirmarExclusao(<?= $row['id']; ?>)" 
+                                        class="text-red-600 hover:text-red-900 p-1" title="Excluir Usuário">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                </button>
                             </td>
 
                         </tr>
@@ -196,6 +262,28 @@ $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORD
             </div>
         </div>
     </main>
+
+    <!-- Modal Alterar Senha -->
+    <div id="modalSenha" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden" style="z-index: 50;">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Alterar Senha</h3>
+                <div class="mt-2 text-left">
+                    <p class="text-sm text-gray-500 mb-4">Nova senha para <strong id="nomeUsuarioModal"></strong>:</p>
+                    <input type="hidden" id="idUsuarioModal">
+                    <input type="password" id="novaSenhaInput" class="w-full bg-slate-50 border border-slate-300 rounded p-2 text-sm" placeholder="Nova Senha">
+                </div>
+                <div class="items-center px-4 py-3 mt-4 space-y-2">
+                    <button id="btnSalvarSenha" onclick="salvarNovaSenha()" class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        Salvar
+                    </button>
+                    <button onclick="fecharModalSemha()" class="px-4 py-2 bg-white text-slate-700 text-base font-medium rounded-md w-full border border-slate-300 shadow-sm hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         async function alterarCargo(idUsuario, novoCargo) {
@@ -215,17 +303,13 @@ $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORD
                 const data = await response.json();
 
                 if (data.sucesso) {
-
                     const badge = document.getElementById(`badge-${idUsuario}`);
-
                     if (novoCargo === 'Administrador') {
                         badge.className = "bg-indigo-700 text-white text-xs font-bold px-3 py-1 rounded-full";
                     } else {
                         badge.className = "border border-slate-300 text-slate-700 text-xs font-bold px-3 py-1 rounded-full";
                     }
-
                     badge.innerText = novoCargo;
-
                 } else {
                     alert("Erro: " + data.msg);
                     location.reload();
@@ -235,6 +319,80 @@ $lista = $conn->query("SELECT id, usuario, email, funcao FROM usuarios_admin ORD
                 console.error(e);
                 alert("Erro ao processar a solicitação.");
                 location.reload();
+            }
+        }
+
+        async function confirmarExclusao(idUsuario) {
+            if (!confirm(`Tem certeza que deseja EXCLUIR o usuário #${idUsuario}? Esta ação não pode ser desfeita.`)) {
+                return;
+            }
+
+            const form = new FormData();
+            form.append('acao', 'excluir_usuario');
+            form.append('id', idUsuario);
+
+            try {
+                const response = await fetch('usuarios.php', { method: 'POST', body: form });
+                const data = await response.json();
+
+                if (data.sucesso) {
+                    alert('Usuário excluído com sucesso.');
+                    location.reload();
+                } else {
+                    alert("Erro: " + data.msg);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao processar a solicitação.");
+            }
+        }
+
+        function abrirModalSenha(id, nome) {
+            document.getElementById('idUsuarioModal').value = id;
+            document.getElementById('nomeUsuarioModal').innerText = nome;
+            document.getElementById('novaSenhaInput').value = '';
+            document.getElementById('modalSenha').classList.remove('hidden');
+        }
+
+        function fecharModalSemha() {
+            document.getElementById('modalSenha').classList.add('hidden');
+        }
+
+        async function salvarNovaSenha() {
+            const id = document.getElementById('idUsuarioModal').value;
+            const senha = document.getElementById('novaSenhaInput').value;
+
+            if (!senha) {
+                alert('A senha não pode ser vazia.');
+                return;
+            }
+
+            const form = new FormData();
+            form.append('acao', 'alterar_senha');
+            form.append('id', id);
+            form.append('nova_senha', senha);
+
+            const btn = document.getElementById('btnSalvarSenha');
+            const originalText = btn.innerText;
+            btn.innerText = 'Salvando...';
+            btn.disabled = true;
+
+            try {
+                const response = await fetch('usuarios.php', { method: 'POST', body: form });
+                const data = await response.json();
+
+                if (data.sucesso) {
+                    alert('Senha alterada com sucesso!');
+                    fecharModalSemha();
+                } else {
+                    alert("Erro: " + data.msg);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao processar a solicitação.");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
             }
         }
     </script>

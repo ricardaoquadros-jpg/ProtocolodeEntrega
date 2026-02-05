@@ -32,8 +32,11 @@ require __DIR__ . '/conexao.php';
     1. BUSCAR PROTOCOLO
 =========================================================== */
 $stmt = $conn->prepare("
-    SELECT nome_recebedor, cpf_matricula, tipo_documento, telefone, email, assinatura_base64, data_criacao
-    FROM protocolos WHERE id = ?
+    SELECT p.nome_recebedor, p.cpf_matricula, p.tipo_documento, p.telefone, p.email, p.assinatura_base64, p.data_criacao,
+           u.nome_completo as emissor_nome, u.email as emissor_email, u.telefone as emissor_telefone
+    FROM protocolos p
+    LEFT JOIN usuarios_admin u ON p.criado_por_id = u.id
+    WHERE p.id = ?
 ");
 $stmt->bind_param("i", $id_protocolo);
 $stmt->execute();
@@ -73,7 +76,12 @@ $dados_js = [
     "telefone"       => $proto["telefone"],
     "email"          => $proto["email"],
     "assinatura"     => $proto["assinatura_base64"],
-    "itens"          => $itens
+    "itens"          => $itens,
+    "emissor"        => [
+        "nome"     => $proto["emissor_nome"],
+        "email"    => $proto["emissor_email"],
+        "telefone" => $proto["emissor_telefone"]
+    ]
 ];
 
 ?>
@@ -167,6 +175,33 @@ $dados_js = [
         doc.line(10, y, larguraPagina - 10, y);
         y += 10;
 
+                    // --- DADOS DO EMISSOR (FUNCIONÁRIO) ---
+        if (dados.emissor && dados.emissor.nome) {
+            y += 5;
+            doc.setFontSize(14);
+            doc.setTextColor(40);
+            doc.setFont("helvetica", "bold");
+            doc.text("Dados do Emissor (Funcionário)", 10, y);
+            y += 8;
+
+            doc.setFontSize(11);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(30);
+
+            doc.text(`Nome: ${dados.emissor.nome}`, 10, y);
+            y += 6;
+            doc.text(`Email: ${dados.emissor.email || ''}`, 10, y);
+            y += 6;
+            doc.text(`Telefone: ${dados.emissor.telefone || ''}`, 10, y);
+            y += 10;
+            
+            // Linha Separadora
+            doc.setLineWidth(0.1);
+            doc.setDrawColor(200);
+            doc.line(10, y, larguraPagina - 10, y);
+            y += 8;
+        }
+
         /* ===========================================================
             ITENS ENTREGUES
         ============================================================ */
@@ -232,8 +267,8 @@ $dados_js = [
         /* ===========================================================
             LOGO
         ============================================================ */
-        const LOGO_WIDTH = 45;
-        const LOGO_HEIGHT = 45;
+        const LOGO_WIDTH = 22.5;
+        const LOGO_HEIGHT = 22.5;
         const xLogo = larguraPagina - LOGO_WIDTH - 15;
         const yLogo = alturaPagina - LOGO_HEIGHT - 15;
 

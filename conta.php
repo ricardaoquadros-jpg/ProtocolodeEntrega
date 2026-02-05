@@ -66,9 +66,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nova_senha'])) {
 }
 
 /* ===========================================================
+    1.1 ALTERAÇÃO DE DADOS PESSOAIS
+=========================================================== */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['salvar_perfil'])) {
+    $nome_completo = trim($_POST['nome_completo'] ?? '');
+    $email         = trim($_POST['email'] ?? '');
+    $telefone      = trim($_POST['telefone'] ?? '');
+
+    if (empty($nome_completo) || empty($email) || empty($telefone)) {
+        $mensagem = "<span class='text-red-600 bg-red-100 p-2 rounded block mt-2'>Todos os campos são obrigatórios.</span>";
+    } else {
+        $upUser = $conn->prepare("UPDATE usuarios_admin SET nome_completo = ?, email = ?, telefone = ? WHERE id = ?");
+        $upUser->bind_param("sssi", $nome_completo, $email, $telefone, $id_usuario);
+
+        if ($upUser->execute()) {
+            $mensagem = "<span class='text-green-600 bg-green-100 p-2 rounded block mt-2'>Dados atualizados com sucesso!</span>";
+        } else {
+            $mensagem = "<span class='text-red-600 bg-red-100 p-2 rounded block mt-2'>Erro ao atualizar dados.</span>";
+        }
+    }
+}
+
+/* ===========================================================
     2. BUSCAR INFORMAÇÕES DO USUÁRIO
 =========================================================== */
-$stmt = $conn->prepare("SELECT usuario, email, funcao FROM usuarios_admin WHERE id = ?");
+$stmt = $conn->prepare("SELECT usuario, email, funcao, nome_completo, telefone FROM usuarios_admin WHERE id = ?");
 $stmt->bind_param("i", $id_usuario);
 $stmt->execute();
 $resUser = $stmt->get_result();
@@ -100,7 +122,7 @@ if ($dados['funcao'] === "Funcionário")   $badgeCor = "bg-blue-600";
 =========================================================== -->
 <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between">
     <div>
-        <a href="protocolos.php" class="h-16 flex items-center px-6 border-b border-slate-100">
+        <a href="index.php" class="h-16 flex items-center px-6 border-b border-slate-100">
             <svg class="w-6 h-6 text-indigo-700 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -121,6 +143,11 @@ if ($dados['funcao'] === "Funcionário")   $badgeCor = "bg-blue-600";
                 Protocolos
             </a>
 
+            <a href="emprestimos.php" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-900">
+                <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+                Empréstimos
+            </a>
+
             <?php if ($dados['funcao'] === 'Administrador'): ?>
             <a href="usuarios.php" class="flex items-center px-4 py-2.5 text-sm font-medium text-slate-500 rounded-lg hover:bg-slate-50 hover:text-slate-900">
                 <svg class="w-5 h-5 mr-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
@@ -128,7 +155,7 @@ if ($dados['funcao'] === "Funcionário")   $badgeCor = "bg-blue-600";
             </a>
             <?php endif; ?>
 
-            <a href="#" class="flex items-center px-4 py-2.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg">
+            <a href="conta.php" class="flex items-center px-4 py-2.5 text-sm font-medium text-indigo-700 bg-indigo-50 rounded-lg">
                 <svg class="w-5 h-5 mr-3 text-indigo-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
                 Conta
             </a>
@@ -168,10 +195,6 @@ if ($dados['funcao'] === "Funcionário")   $badgeCor = "bg-blue-600";
                     <?= htmlspecialchars($dados['usuario']) ?>
                 </p>
 
-                <p><strong class="text-slate-700">Email:</strong>
-                    <?= htmlspecialchars($dados['email'] ?: 'Não informado') ?>
-                </p>
-
                 <p><strong class="text-slate-700">Cargo:</strong>
                     <span class="<?= $badgeCor ?> text-white text-xs font-bold px-3 py-1 rounded-full">
                     <?= htmlspecialchars($dados['funcao']) ?>
@@ -179,6 +202,45 @@ if ($dados['funcao'] === "Funcionário")   $badgeCor = "bg-blue-600";
                 </p>
 
             </div>
+        </div>
+
+        <!-- ===========================================================
+            DADOS PESSOAIS
+        ============================================================ -->
+        <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h2 class="text-lg font-bold text-slate-800 mb-1">Dados Pessoais</h2>
+            <p class="text-sm text-slate-500 mb-6">Mantenha seus dados atualizados.</p>
+
+            <form method="POST" action="">
+                <input type="hidden" name="salvar_perfil" value="1">
+                <div class="space-y-4">
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Nome Completo <span class="text-red-500">*</span></label>
+                        <input type="text" name="nome_completo" required
+                               value="<?= htmlspecialchars($dados['nome_completo'] ?? '') ?>"
+                               class="w-full bg-indigo-50 border border-indigo-200 text-sm rounded-md p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Email para Contato <span class="text-red-500">*</span></label>
+                        <input type="email" name="email" required
+                               value="<?= htmlspecialchars($dados['email'] ?? '') ?>"
+                               class="w-full bg-indigo-50 border border-indigo-200 text-sm rounded-md p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Telefone <span class="text-red-500">*</span></label>
+                        <input type="text" name="telefone" required
+                               value="<?= htmlspecialchars($dados['telefone'] ?? '') ?>"
+                               class="w-full bg-indigo-50 border border-indigo-200 text-sm rounded-md p-2.5 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+
+                    <button class="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm hover:bg-indigo-700">
+                        Salvar Dados
+                    </button>
+                </div>
+            </form>
         </div>
 
         <!-- ===========================================================

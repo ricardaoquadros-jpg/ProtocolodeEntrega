@@ -10,6 +10,10 @@ php.ini
 
 # Configuration with credentials
 conexao.php
+config.php
+
+# Development files
+_dev/
 
 # Dependencies
 vendor/

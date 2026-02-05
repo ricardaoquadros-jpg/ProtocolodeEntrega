@@ -1,0 +1,107 @@
+# ============================================
+# CONFIGURAÇÕES DE SEGURANÇA - APACHE
+# Sistema de Protocolos - Prefeitura
+# ============================================
+
+# Prevenir listagem de diretórios
+Options -Indexes
+
+# Seguir links simbólicos
+Options +FollowSymLinks
+
+# ============================================
+# FORÇAR HTTPS (descomente em produção)
+# ============================================
+# RewriteEngine On
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# ============================================
+# BLOQUEAR ACESSO A ARQUIVOS SENSÍVEIS
+# ============================================
+
+# Bloquear arquivos de configuração
+<FilesMatch "^(config|conexao)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear arquivos de log
+<FilesMatch "\.log$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear scripts de migração/desenvolvimento
+<FilesMatch "^(check_schema|test_db|update_db|migrate).*\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear arquivos de backup
+<FilesMatch "\.(sql|bak|backup|old)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Bloquear arquivos de configuração do sistema
+<FilesMatch "^(composer\.(json|lock)|\.gitignore|README\.md|DEPLOY\.md|\.htaccess)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# ============================================
+# BLOQUEAR ACESSO A DIRETÓRIOS SENSÍVEIS
+# ============================================
+
+# Bloquear pasta vendor (apenas autoload é necessário)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^vendor/(?!autoload\.php$) - [F,L]
+</IfModule>
+
+# Bloquear pasta _dev
+<IfModule mod_rewrite.c>
+    RewriteRule ^_dev/ - [F,L]
+</IfModule>
+
+# Bloquear pasta utils (acesso direto)
+<IfModule mod_rewrite.c>
+    RewriteRule ^utils/ - [F,L]
+</IfModule>
+
+# ============================================
+# HEADERS DE SEGURANÇA ADICIONAIS
+# ============================================
+<IfModule mod_headers.c>
+    # Prevenir MIME-type sniffing
+    Header set X-Content-Type-Options "nosniff"
+    
+    # Prevenir clickjacking
+    Header set X-Frame-Options "SAMEORIGIN"
+    
+    # Ativar proteção XSS
+    Header set X-XSS-Protection "1; mode=block"
+    
+    # Política de referrer
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# ============================================
+# COMPRESSÃO GZIP (melhora performance)
+# ============================================
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css application/javascript application/json
+</IfModule>
+
+# ============================================
+# CACHE DE ARQUIVOS ESTÁTICOS
+# ============================================
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/gif "access plus 1 month"
+    ExpiresByType text/css "access plus 1 week"
+    ExpiresByType application/javascript "access plus 1 week"
+</IfModule>

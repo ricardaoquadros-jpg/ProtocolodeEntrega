@@ -58,11 +58,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['admin_id'] = $row['id'];
                         $_SESSION['funcao'] = $row['funcao'];
 
-                        if ($row['funcao'] === 'Administrador') {
-                            header("Location: dashboard.php");
-                        } else {
-                            header("Location: protocolos.php");
+                        // Redirect all users to the main menu
+                        $destino = "index.php";
+
+                        // Verify if there is a saved redirect in the URL
+                        if (isset($_GET['redirect']) && !empty($_GET['redirect'])) {
+                            // Sanitização básica para evitar open redirect para outros domínios
+                            $redirect = $_GET['redirect'];
+                            // Aceita apenas arquivos .php do mesmo domínio/pasta (simples check)
+                            if (preg_match('/^[a-zA-Z0-9_]+\.php$/', $redirect)) {
+                                $destino = $redirect;
+                            }
                         }
+
+                        header("Location: " . $destino);
                         exit;
                     } else {
                         $erro = "Usuário ou senha incorretos.";

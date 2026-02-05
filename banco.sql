@@ -12,6 +12,9 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 
 
+CREATE DATABASE IF NOT EXISTS `banco`;
+USE `banco`;
+
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
@@ -31,6 +34,7 @@ CREATE TABLE `protocolos` (
   `id` int(11) NOT NULL,
   `nome_recebedor` varchar(255) NOT NULL,
   `cpf_matricula` varchar(50) DEFAULT NULL,
+  `tipo_documento` varchar(20) NOT NULL DEFAULT 'cpf',
   `telefone` varchar(20) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `assinatura_base64` longtext DEFAULT NULL,
@@ -219,3 +223,21 @@ COMMIT;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+-- --------------------------------------------------------
+
+--
+-- Estrutura para tabela protocolo_itens
+--
+
+CREATE TABLE IF NOT EXISTS protocolo_itens (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  protocolo_id int(11) NOT NULL,
+  patrimonio_codigo varchar(50) DEFAULT NULL,
+  tipo_transacao varchar(20) DEFAULT 'ENTREGA',
+  tipo_equipamento varchar(100) DEFAULT NULL,
+  PRIMARY KEY (id),
+  KEY protocolo_id (protocolo_id),
+  CONSTRAINT fk_protocolo FOREIGN KEY (protocolo_id) REFERENCES protocolos (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+

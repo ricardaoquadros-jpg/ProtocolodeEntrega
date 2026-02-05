@@ -1,3 +1,51 @@
+<?php
+define('APP_RUNNING', true);
+
+require_once __DIR__ . '/utils/config_seguranca.php';
+require_once __DIR__ . '/utils/seguranca.php';
+
+session_start();
+
+// Verifica se o usuário está logado
+if (!isset($_SESSION['admin_logado'])) {
+    header("Location: login.php?redirect=novo_protocolo.php");
+    exit;
+}
+
+// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
+require_once __DIR__ . '/conexao.php';
+$id_usuario = intval($_SESSION['admin_id']);
+$stmtProfile = $conn->prepare("SELECT nome_completo, email, telefone FROM usuarios_admin WHERE id = ?");
+$stmtProfile->bind_param("i", $id_usuario);
+$stmtProfile->execute();
+$resProfile = $stmtProfile->get_result();
+$userProfile = $resProfile->fetch_assoc();
+
+if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile['email']) || empty($userProfile['telefone'])) {
+    echo "<script>
+        alert('Para emitir protocolos, você precisa completar seu perfil (Nome, Email e Telefone).');
+        window.location.href = 'conta.php';
+    </script>";
+    exit;
+}
+
+// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
+require_once __DIR__ . '/conexao.php';
+$id_usuario = intval($_SESSION['admin_id']);
+$stmtProfile = $conn->prepare("SELECT nome_completo, email, telefone FROM usuarios_admin WHERE id = ?");
+$stmtProfile->bind_param("i", $id_usuario);
+$stmtProfile->execute();
+$resProfile = $stmtProfile->get_result();
+$userProfile = $resProfile->fetch_assoc();
+
+if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile['email']) || empty($userProfile['telefone'])) {
+    echo "<script>
+        alert('Para emitir protocolos, você precisa completar seu perfil (Nome, Email e Telefone).');
+        window.location.href = 'conta.php';
+    </script>";
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="pt-br">
 
@@ -43,12 +91,14 @@
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
                 </path>
             </svg>
-            <h1 class="text-xl font-bold text-slate-800">Protocolo de Entrega</h1>
+            <h1 class="text-xl font-bold text-slate-800">Protocolo</h1>
         </div>
-        <a href="login.php"
+        <a href="index.php"
             class="bg-indigo-50 text-indigo-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-100 flex items-center gap-2 border border-indigo-100">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">...</svg>
-            Área Restrita
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            Voltar ao Menu
         </a>
     </header>
 
@@ -56,8 +106,7 @@
 
         <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200">
             <h2 class="text-lg font-bold text-slate-800 mb-1">Dados do Recebedor</h2>
-            <p class="text-sm text-slate-500 mb-4">Informações da pessoa que está recebendo os
-                bens.</p>
+            <p class="text-sm text-slate-500 mb-4">Registro de entrega de computadores, periféricos e outros ativos.</p>
 
             <div class="space-y-4">
                 <div>
@@ -139,6 +188,29 @@
                     </div>
                 </div>
 
+                <!-- Setor/Departamento Field -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Setor/Departamento</label>
+                    <div class="relative">
+                        <svg class="w-5 h-5 input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                            </path>
+                        </svg>
+                        <input type="text" id="setor" placeholder="Ex: Secretaria de Educação, TI, RH..." class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+      text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
+      block pl-12 pr-3 py-2 shadow-sm">
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-1">Observações</label>
+                    <textarea id="observacoes" rows="2" placeholder="Anotações adicionais sobre este protocolo (opcional)" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+      text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
+      block p-3 shadow-sm resize-none"></textarea>
+                </div>
+
                 <!-- 3. PATRIMÔNIOS -->
                 <div class="pt-4 border-t border-slate-100">
                     <div class="flex justify-between items-center mb-4">
@@ -155,8 +227,8 @@
 
                     <div id="lista-patrimonios" class="space-y-4">
                         <!-- Item Padrão -->
-                        <div class="patrimonio-item grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                            <div class="md:col-span-3">
+                        <div class="patrimonio-item grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                            <div class="md:col-span-4">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Código do
                                     Patrimônio</label>
                                 <div class="relative">
@@ -166,13 +238,23 @@
                                             d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4">
                                         </path>
                                     </svg>
-                                    <input type="text" name="patrimonio_cod" placeholder="Novo Patrimônio" maxlength="6"
-                                        oninput="mascaraPatrimonio(this)" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+                                    <input type="text" name="patrimonio_cod" placeholder="Novo Patrimônio"
+                                        maxlength="6" oninput="mascaraPatrimonio(this)" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
                                text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
                                block pl-12 pr-3 py-2 shadow-sm">
                                 </div>
                             </div>
-                            <div>
+                            <div class="md:col-span-3">
+                                <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de
+                                    Transação</label>
+                                <select name="tipo_transacao" onchange="onTransacaoChange(this)" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
+                               text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 
+                               block p-2.5 shadow-sm">
+                                    <option value="ENTREGA PARA TI">ENTREGA PARA TI</option>
+                                    <option value="DEVOLUÇÃO">DEVOLUÇÃO</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-3">
                                 <label class="block text-sm font-medium text-slate-700 mb-1">Tipo de
                                     Equipamento</label>
                                 <select name="equipamento_tipo" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 
@@ -184,6 +266,14 @@
                                     <option value="Computador">Computador</option>
                                     <option value="Periferico">Periférico</option>
                                     <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2 emprestimo-selector hidden">
+                                <label class="block text-sm font-medium text-amber-700 mb-1">Buscar Empréstimo</label>
+                                <select name="emprestimo_item" onchange="onEmprestimoItemSelect(this)" class="w-full bg-amber-50 border border-amber-200 text-slate-900 
+                               text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 
+                               block p-2.5 shadow-sm">
+                                    <option value="">Selecione...</option>
                                 </select>
                             </div>
                         </div>
@@ -256,15 +346,21 @@
                 function adicionarItem() {
                     const container = document.getElementById('lista-patrimonios');
                     const novoItem = document.createElement('div');
-                    novoItem.className = 'patrimonio-item grid grid-cols-1 md:grid-cols-4 gap-4 items-end pt-2 border-t border-indigo-50';
+                    novoItem.className = 'patrimonio-item grid grid-cols-1 md:grid-cols-12 gap-4 items-end pt-2 border-t border-indigo-50';
                     novoItem.innerHTML = `
-                <div class="md:col-span-3">
+                <div class="md:col-span-4">
                     <div class="relative">
                         <svg class="w-5 h-5 input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
                         <input type="text" name="patrimonio_cod" placeholder="Novo Patrimônio" maxlength="6" oninput="mascaraPatrimonio(this)" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block pl-12 pr-3 py-2 shadow-sm">
                     </div>
                 </div>
-                <div>
+                <div class="md:col-span-3">
+                    <select name="tipo_transacao" onchange="onTransacaoChange(this)" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 shadow-sm">
+                        <option value="ENTREGA PARA TI">ENTREGA PARA TI</option>
+                        <option value="DEVOLUÇÃO">DEVOLUÇÃO</option>
+                    </select>
+                </div>
+                <div class="md:col-span-3">
                     <select name="equipamento_tipo" class="w-full bg-indigo-50 border border-indigo-100 text-slate-900 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 shadow-sm">
                         <option value="">Selecione</option>
                         <option value="Notebook">Notebook</option>
@@ -272,6 +368,11 @@
                         <option value="Computador">Computador</option>
                         <option value="Periferico">Periférico</option>
                         <option value="Outro">Outro</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2 emprestimo-selector hidden">
+                    <select name="emprestimo_item" onchange="onEmprestimoItemSelect(this)" class="w-full bg-amber-50 border border-amber-200 text-slate-900 text-sm rounded-md focus:ring-amber-500 focus:border-amber-500 block p-2.5 shadow-sm">
+                        <option value="">Selecione...</option>
                     </select>
                 </div>
             `;
@@ -308,10 +409,12 @@
                     const itens = [];
                     document.querySelectorAll('.patrimonio-item').forEach(item => {
                         const pat = item.querySelector('[name="patrimonio_cod"]');
+                        const trans = item.querySelector('[name="tipo_transacao"]');
                         const equip = item.querySelector('[name="equipamento_tipo"]');
                         if (pat && equip && pat.value.trim()) {
                             itens.push({
                                 patrimonio: pat.value.trim(),
+                                transacao: trans.value,
                                 equipamento: equip.value.trim()
                             });
                         }
@@ -332,9 +435,11 @@
                         documento: documento,
                         telefone: telefone,
                         email: email,
+                        observacoes: document.getElementById('observacoes').value.trim(),
                         assinatura: assinatura,
                         itens: itens.map(i => ({
                             patrimonio: limpar(i.patrimonio),
+                            transacao: i.transacao,
                             equipamento: limpar(i.equipamento)
                         }))
                     };
@@ -371,6 +476,7 @@
 
 
                 // 4. Função Geradora de PDF (Client-side)
+                const dadosEmissor = <?= json_encode($userProfile); ?>;
                 const LOGO_PREFEITURA_URL = 'https://i.imgur.com/Hi25PGf.jpeg';
 
                 // Função para enviar o PDF por e-mail
@@ -477,6 +583,33 @@
                     doc.line(10, y, larguraPagina - 10, y);
                     y += 10;
 
+                    // --- 2.1. DADOS DO EMISSOR (FUNCIONÁRIO) ---
+                    if (dadosEmissor) {
+                        y += 5;
+                        doc.setFontSize(14);
+                        doc.setTextColor(40);
+                        doc.setFont("helvetica", "bold");
+                        doc.text("Dados do Emissor (Funcionário)", 10, y);
+                        y += 8;
+
+                        doc.setFontSize(11);
+                        doc.setFont("helvetica", "normal");
+                        doc.setTextColor(30);
+
+                        doc.text(`Nome: ${dadosEmissor.nome_completo}`, 10, y);
+                        y += 6;
+                        doc.text(`Email: ${dadosEmissor.email}`, 10, y);
+                        y += 6;
+                        doc.text(`Telefone: ${dadosEmissor.telefone}`, 10, y);
+                        y += 10;
+                        
+                        // Linha Separadora
+                        doc.setLineWidth(0.1);
+                        doc.setDrawColor(200);
+                        doc.line(10, y, larguraPagina - 10, y);
+                        y += 8;
+                    }
+
                     // --- 3. PATRIMÔNIOS ENTREGUES ---
                     doc.setFontSize(14);
                     doc.setTextColor(50);
@@ -488,7 +621,8 @@
                     doc.setFontSize(10);
                     doc.setTextColor(100);
                     doc.text("CÓDIGO", 15, y);
-                    doc.text("TIPO/DESCRIÇÃO", 60, y);
+                    doc.text("TRANSAÇÃO", 50, y);
+                    doc.text("TIPO/DESCRIÇÃO", 90, y);
 
                     // Itens
                     y += 6;
@@ -498,7 +632,8 @@
                     dados.itens.forEach((item) => {
                         y += 4;
                         doc.text(`${item.patrimonio_codigo || item.patrimonio}`, 15, y);
-                        doc.text(item.tipo_equipamento || item.equipamento, 60, y);
+                        doc.text(item.tipo_transacao || item.transacao || 'ENTREGA', 50, y);
+                        doc.text(item.tipo_equipamento || item.equipamento, 90, y);
                     });
 
                     // Linha Separadora
@@ -545,8 +680,8 @@
 
                     // --- 6. LOGO DA PREFEITURA ---
                     const MARGEM = 15;
-                    const LOGO_WIDTH = 50;
-                    const LOGO_HEIGHT = 50;
+                    const LOGO_WIDTH = 25;
+                    const LOGO_HEIGHT = 25;
                     const xLogo = larguraPagina - LOGO_WIDTH - MARGEM;
                     const yLogo = alturaPagina - LOGO_HEIGHT - MARGEM;
 
@@ -664,7 +799,87 @@
                         }
                     }
                 }
+
+                /* --- SELEÇÃO DE EMPRÉSTIMO POR LINHA --- */
+                let emprestimosCache = null;
+
+                async function buscarEmprestimosAtivos() {
+                    if (emprestimosCache) return emprestimosCache;
+                    try {
+                        const res = await fetch('buscar_emprestimos_ativos.php');
+                        const json = await res.json();
+                        if (json.success) {
+                            emprestimosCache = json.data;
+                            return json.data;
+                        }
+                    } catch (e) {
+                        console.error('Erro ao buscar empréstimos:', e);
+                    }
+                    return [];
+                }
+
+                async function onTransacaoChange(select) {
+                    const row = select.closest('.patrimonio-item');
+                    const selectorDiv = row.querySelector('.emprestimo-selector');
+                    const emprestimoSelect = row.querySelector('[name="emprestimo_item"]');
+
+                    if (select.value === 'DEVOLUÇÃO') {
+                        selectorDiv.classList.remove('hidden');
+                        // Preencher o select com itens de empréstimos ativos
+                        const emprestimos = await buscarEmprestimosAtivos();
+                        let options = '<option value="">Selecione item...</option>';
+                        
+                        emprestimos.forEach(emp => {
+                            if (emp.itens && emp.itens.length > 0) {
+                                emp.itens.forEach(item => {
+                                    options += `<option value="${item.patrimonio_codigo}" data-tipo="${item.equipamento_tipo}" data-nome="${emp.responsavel_nome}" data-cpf="${emp.responsavel_cpf}" data-tel="${emp.responsavel_telefone}" data-email="${emp.responsavel_email || ''}" data-setor="${emp.responsavel_setor || ''}">[${item.patrimonio_codigo}] ${item.equipamento_tipo} - ${emp.responsavel_nome}</option>`;
+                                });
+                            }
+                        });
+                        emprestimoSelect.innerHTML = options;
+                    } else {
+                        selectorDiv.classList.add('hidden');
+                        emprestimoSelect.innerHTML = '<option value="">Selecione...</option>';
+                    }
+                }
+
+                function onEmprestimoItemSelect(select) {
+                    if (!select.value) return;
+                    
+                    const row = select.closest('.patrimonio-item');
+                    const selectedOption = select.options[select.selectedIndex];
+                    
+                    // Preencher patrimônio e tipo de equipamento
+                    row.querySelector('[name="patrimonio_cod"]').value = select.value;
+                    
+                    const tipoEquip = selectedOption.dataset.tipo;
+                    const equipSelect = row.querySelector('[name="equipamento_tipo"]');
+                    for (let opt of equipSelect.options) {
+                        if (opt.value === tipoEquip) {
+                            opt.selected = true;
+                            break;
+                        }
+                    }
+                    
+                    // Opcional: preencher dados do recebedor se estiverem vazios
+                    const nomeInput = document.getElementById('nome');
+                    if (!nomeInput.value.trim()) {
+                        nomeInput.value = selectedOption.dataset.nome || '';
+                        document.getElementById('cpf').value = selectedOption.dataset.cpf || '';
+                        document.getElementById('telefone').value = selectedOption.dataset.tel || '';
+                        document.getElementById('email').value = selectedOption.dataset.email || '';
+                        document.getElementById('setor').value = selectedOption.dataset.setor || '';
+                        document.getElementById('tipoDoc').value = 'cpf';
+                        trocarDoc();
+                    }
+                    
+                    // Feedback visual
+                    select.classList.add('ring-2', 'ring-green-400');
+                    setTimeout(() => select.classList.remove('ring-2', 'ring-green-400'), 1000);
+                }
+
             </script>
+
 </body>
 
 </html>
