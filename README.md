@@ -81,34 +81,60 @@ O projeto foi criado inteiramente utilizando **Google AI Studio**, **Gemini 3 Pr
 ## 📁 Estrutura Geral do Projeto
 ```bash
 /
-├─ public/
-│ ├─ index.html
-│ ├─ form/
-│ ├─ js/
-│ ├─ css/
-│ └─ pdf/
+├── index.php                  # Página inicial (menu principal)
+├── login.php                  # Autenticação de usuários
+├── cadastro.php               # Cadastro de novos usuários
+├── logout.php                 # Encerramento de sessão
+├── config.php                 # Configurações (banco, SMTP, etc.)
+├── config.sample.php          # Template de configuração (para deploy)
+├── conexao.php                # Conexão com banco MySQL
+├── conexao.sample.php         # Template de conexão
 │
-├─ backend/
-│ ├─ conexao.php
-│ ├─ registrar_protocolo.php
-│ ├─ enviar_email.php
-│ ├─ phpmailer/
-│ └─ admin/
-│ ├─ login.php
-│ ├─ dashboard.php
-│ └─ protocolos.php
+├── novo_protocolo.php         # Formulário de novo protocolo
+├── protocolos.php             # Listagem de protocolos (com paginação)
+├── visualizar_pdf.php         # Visualização/geração de PDF
+├── salvar.php                 # API: salvar protocolo
+├── enviar_email.php           # API: enviar PDF por email
 │
-└─ README.md
+├── novo_emprestimo.php        # Formulário de empréstimo
+├── emprestimos.php            # Listagem de empréstimos (com paginação)
+├── salvar_emprestimo.php      # API: salvar empréstimo
+├── devolver_emprestimo.php    # API: registrar devolução
+├── buscar_emprestimos_ativos.php  # API: empréstimos ativos
+│
+├── dashboard.php              # Dashboard administrativo (gráficos/KPIs)
+├── usuarios.php               # Gerenciamento de usuários (admin)
+├── conta.php                  # Perfil do usuário logado
+│
+├── migrate.php                # Script de migração de banco
+├── .htaccess                  # Regras de segurança e rewrite
+├── composer.json              # Dependência: PHPMailer
+│
+├── utils/
+│   ├── config_seguranca.php   # Headers e configuração de sessão
+│   ├── seguranca.php          # Sanitização e CSRF
+│   └── sidebar.php            # Componente lateral reutilizável
+│
+├── sql/
+│   └── optimize_indices.sql   # Script de otimização MySQL
+│
+├── vendor/                    # Dependências (PHPMailer via Composer)
+├── DEPLOY.md                  # Guia completo de implantação
+└── README.md                  # Este arquivo
 ```
 ---
 
 ## 🔐 Segurança
 
-- PDF com assinatura digital Base64  
-- Banco MySQL com registro completo das ações  
-- Separação entre área pública e administrativa  
-- Sistema de auditoria interna  
-- Controle de usuários responsáveis pelas entregas  
+- **Senhas** criptografadas com `password_hash` / `password_verify`  
+- **Prepared statements** (parametrizados) em todas as queries  
+- **Headers de segurança** (X-Content-Type-Options, X-Frame-Options, XSS Protection)
+- **CSRF tokens** em formulários e ações AJAX  
+- **Sessões seguras** (httponly, strict mode, regeneração de ID)  
+- **Sanitização centralizada** de entradas  
+- **`.htaccess`** com bloqueio de arquivos sensíveis  
+- **Separação** entre área pública e administrativa  
+- **Controle de cargo** (Administrador / Funcionário / Usuário)  
 
 ---
 

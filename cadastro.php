@@ -2,6 +2,11 @@
 define('APP_RUNNING', true);
 
 /* --- SEGURANÇA E LOGS --- */
+require_once __DIR__ . '/utils/config_seguranca.php';
+
+session_start();
+aplicarHeadersSeguranca();
+
 ini_set('display_errors', 0);
 ini_set('display_startup_errors', 0);
 error_reporting(E_ALL);
@@ -15,42 +20,55 @@ $mensagem = '';
 $tipo_msg = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $usuario = limparTexto($_POST['usuario'] ?? '');
-    $senha   = $_POST['senha'] ?? '';
 
-    // Verify Access Code
-    $codigo_acesso = $_POST['codigo_acesso'] ?? '';
-    // Código de acesso definido no config.php
-    $codigo_secreto = defined('CODIGO_ACESSO_CADASTRO') ? CODIGO_ACESSO_CADASTRO : 'PREFEITURA2024';
-
-    if ($codigo_acesso !== $codigo_secreto) {
-        $mensagem = "Código de acesso inválido!";
+    // Valida CSRF
+    if (!validarCSRF()) {
+        $mensagem = "Token de segurança inválido. Atualize a página.";
         $tipo_msg = 'erro';
     } else {
-        // Verifica se usuário já existe
-        $check = $conn->prepare("SELECT id FROM usuarios_admin WHERE usuario = ?");
-        $check->bind_param("s", $usuario);
-        $check->execute();
-        $result = $check->get_result();
+        $usuario = limparTexto($_POST['usuario'] ?? '');
+        $senha   = $_POST['senha'] ?? '';
 
-    if ($result->num_rows > 0) {
-        $mensagem = "Este nome de usuário já está em uso.";
-        $tipo_msg = 'erro';
-    } else {
-        $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
-        $cargo_padrao = 'Usuário';
-
-        $stmt = $conn->prepare("INSERT INTO usuarios_admin (usuario, senha_hash, funcao) VALUES (?, ?, ?)");
-        $stmt->bind_param("sss", $usuario, $senha_hash, $cargo_padrao);
-
-        if ($stmt->execute()) {
-            $mensagem = "Conta criada com sucesso! Redirecionando...";
-            $tipo_msg = 'sucesso';
-            header("refresh:2;url=login.php");
-        } else {
-            $mensagem = "Erro ao criar conta: " . $conn->error;
+        // Validação de força de senha
+        if (strlen($senha) < 6) {
+            $mensagem = "A senha deve ter pelo menos 6 caracteres.";
             $tipo_msg = 'erro';
-        }
+        } else {
+            // Verify Access Code
+            $codigo_acesso = $_POST['codigo_acesso'] ?? '';
+            $codigo_secreto = defined('CODIGO_ACESSO_CADASTRO') ? CODIGO_ACESSO_CADASTRO : 'PREFEITURA2024';
+
+            if ($codigo_acesso !== $codigo_secreto) {
+                $mensagem = "Código de acesso inválido!";
+                $tipo_msg = 'erro';
+            } else {
+                // Verifica se usuário já existe
+                $check = $conn->prepare("SELECT id FROM usuarios_admin WHERE usuario = ?");
+                $check->bind_param("s", $usuario);
+                $check->execute();
+                $result = $check->get_result();
+
+                if ($result->num_rows > 0) {
+                    $mensagem = "Este nome de usuário já está em uso.";
+                    $tipo_msg = 'erro';
+                } else {
+                    $senha_hash = password_hash($senha, PASSWORD_DEFAULT);
+                    $cargo_padrao = 'Usuário';
+
+                    $stmt = $conn->prepare("INSERT INTO usuarios_admin (usuario, senha_hash, funcao) VALUES (?, ?, ?)");
+                    $stmt->bind_param("sss", $usuario, $senha_hash, $cargo_padrao);
+
+                    if ($stmt->execute()) {
+                        $mensagem = "Conta criada com sucesso! Redirecionando...";
+                        $tipo_msg = 'sucesso';
+                        header("refresh:2;url=login.php");
+                    } else {
+                        error_log("Erro ao criar conta: " . $conn->error);
+                        $mensagem = "Erro ao criar conta. Tente novamente.";
+                        $tipo_msg = 'erro';
+                    }
+                }
+            }
         }
     }
 }
@@ -89,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="POST" action="">
+            <?= inputCSRF() ?>
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-1">Usuário</label>

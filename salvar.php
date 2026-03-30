@@ -87,10 +87,12 @@ if (strpos($assinatura, "data:image") !== 0) {
     SALVAR NO BANCO
    =============================== */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+session_start();
+if (!isset($_SESSION['admin_logado'])) {
+    echo json_encode(['success' => false, 'message' => 'Não autenticado. Faça login novamente.']);
+    exit;
 }
-$criadoPor = $_SESSION['admin_id'] ?? null;
+$criadoPor = $_SESSION['admin_id'];
 
 if (!$conn || $conn->connect_error) {
     echo json_encode(['success' => false, 'message' => 'Erro na conexão com o banco']);
@@ -135,6 +137,9 @@ if (!empty($itens)) {
              VALUES (?, ?, ?, ?)";
 
     $stmt2 = $conn->prepare($sql2);
+    
+    // Array para armazenar IDs de empréstimos a serem atualizados
+    $emprestimosParaDevolver = [];
 
     if ($stmt2) {
         foreach ($itens as $item) {
@@ -145,9 +150,31 @@ if (!empty($itens)) {
             if ($codigo !== '') {
                 $stmt2->bind_param("isss", $idProtocolo, $codigo, $transacao, $tipo);
                 $stmt2->execute();
+                
+                // Se for devolução e tiver emprestimo_id, marcar para atualizar
+                if (strtoupper($transacao) === 'DEVOLUÇÃO' && !empty($item['emprestimo_id'])) {
+                    $emprestimosParaDevolver[$item['emprestimo_id']] = true;
+                }
             }
         }
         $stmt2->close();
+    }
+    
+    // Atualizar empréstimos para status 'devolvido'
+    if (!empty($emprestimosParaDevolver)) {
+        $devolvidoPor = $_SESSION['admin_id'] ?? null;
+        
+        $sqlUpdate = "UPDATE emprestimos SET status = 'devolvido', data_devolucao = NOW(), devolvido_por_id = ? WHERE id = ?";
+        $stmtUpdate = $conn->prepare($sqlUpdate);
+        
+        if ($stmtUpdate) {
+            foreach (array_keys($emprestimosParaDevolver) as $emprestimoId) {
+                $emprestimoId = (int)$emprestimoId;
+                $stmtUpdate->bind_param("ii", $devolvidoPor, $emprestimoId);
+                $stmtUpdate->execute();
+            }
+            $stmtUpdate->close();
+        }
     }
 }
 

@@ -44,7 +44,9 @@ function limparItens($itens) {
     foreach ($itens as $item) {
         $limpos[] = [
             'patrimonio' => limparTexto($item['patrimonio'] ?? ''),
-            'equipamento' => limparTexto($item['equipamento'] ?? '')
+            'transacao' => limparTexto($item['transacao'] ?? 'ENTREGA'),
+            'equipamento' => limparTexto($item['equipamento'] ?? ''),
+            'emprestimo_id' => isset($item['emprestimo_id']) ? intval($item['emprestimo_id']) : null
         ];
     }
 

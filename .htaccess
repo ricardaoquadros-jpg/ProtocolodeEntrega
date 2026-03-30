@@ -33,7 +33,7 @@ Options +FollowSymLinks
 </FilesMatch>
 
 # Bloquear scripts de migração/desenvolvimento
-<FilesMatch "^(check_schema|test_db|update_db|migrate).*\.php$">
+<FilesMatch "^(check_schema|test_db|update_db|setup_db|migrate).*\.php$">
     Order allow,deny
     Deny from all
 </FilesMatch>
