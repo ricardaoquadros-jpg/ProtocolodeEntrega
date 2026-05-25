@@ -328,6 +328,8 @@ $contTotal = $contAtivos + $contAtrasados + $contDevolvidos;
     </div>
 
     <script>
+        const CSRF_TOKEN = '<?= gerarTokenCSRF() ?>';
+
         function confirmarDevolucao(id, nome) {
             document.getElementById('idEmprestimo').value = id;
             document.getElementById('nomeResponsavel').innerText = nome;
@@ -348,6 +350,7 @@ $contTotal = $contAtivos + $contAtrasados + $contDevolvidos;
             try {
                 const form = new FormData();
                 form.append('id', id);
+                form.append('csrf_token', CSRF_TOKEN);
 
                 const response = await fetch('devolver_emprestimo.php', {
                     method: 'POST',

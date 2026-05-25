@@ -13,17 +13,41 @@ define('APP_RUNNING', true);
 
 date_default_timezone_set('America/Sao_Paulo');
 
+/* --- IMPORTS DE SEGURANÇA --- */
+require_once __DIR__ . '/utils/config_seguranca.php';
+require_once __DIR__ . '/utils/seguranca.php';
+
+session_start();
+
 /* --- HEADER JSON --- */
 header('Content-Type: application/json; charset=utf-8');
-
-/* --- IMPORTS --- */
-require_once __DIR__ . '/utils/seguranca.php';
 
 if (!file_exists(__DIR__ . '/conexao.php')) {
     echo json_encode(['success' => false, 'message' => 'Arquivo conexao.php não encontrado']);
     exit;
 }
 require_once __DIR__ . '/conexao.php';
+
+/* --- AUTENTICAÇÃO --- */
+if (!isset($_SESSION['admin_logado'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Não autenticado. Faça login novamente.']);
+    exit;
+}
+
+/* --- CSRF (header X-CSRF-Token) --- */
+if (!validarCSRFRequest()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Token de segurança inválido. Atualize a página.']);
+    exit;
+}
+
+/* --- AUTORIZAÇÃO POR PAPEL (Funcionário ou Administrador) --- */
+if (!checarAcessoFuncionario($conn)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Permissão insuficiente para emitir protocolos.']);
+    exit;
+}
 
 /* --- LER JSON --- */
 $raw = file_get_contents("php://input");
@@ -87,11 +111,6 @@ if (strpos($assinatura, "data:image") !== 0) {
     SALVAR NO BANCO
    =============================== */
 
-session_start();
-if (!isset($_SESSION['admin_logado'])) {
-    echo json_encode(['success' => false, 'message' => 'Não autenticado. Faça login novamente.']);
-    exit;
-}
 $criadoPor = $_SESSION['admin_id'];
 
 if (!$conn || $conn->connect_error) {
@@ -177,6 +196,8 @@ if (!empty($itens)) {
         }
     }
 }
+
+registrarLogAuditoria($conn, 'PROTOCOLO_CRIADO', "Protocolo #{$idProtocolo} para {$nome}");
 
 $conn->close();
 

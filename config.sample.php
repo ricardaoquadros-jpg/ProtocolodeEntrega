@@ -43,6 +43,19 @@ define('DEBUG_MODE', false);                // NUNCA true em produção!
 define('TIMEZONE', 'America/Sao_Paulo');
 
 /* ============================================
+   CONFIGURAÇÃO DE SEGURANÇA E ERROS
+   ============================================ */
+define('FORCE_HTTPS', true);                // Em produção mantenha true (força HTTPS)
+define('MIGRATION_KEY', 'MUDE_ESTA_CHAVE'); // OBRIGATÓRIO trocar: migrate.php não roda com este valor
+define('ERROR_LOG_PATH', __DIR__ . '/logs_php_errors.log'); // IDEAL: aponte para um caminho FORA do webroot
+
+/* ============================================
+   PROTEÇÃO CONTRA FORÇA BRUTA (LOGIN)
+   ============================================ */
+define('MAX_LOGIN_ATTEMPTS', 5);            // Tentativas por IP antes do bloqueio temporário
+define('LOGIN_LOCKOUT_MINUTES', 15);        // Janela de bloqueio em minutos
+
+/* ============================================
    URLs E CAMINHOS
    ============================================ */
 define('BASE_URL', '/');                    // Caminho base da aplicação

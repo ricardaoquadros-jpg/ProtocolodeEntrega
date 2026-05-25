@@ -29,9 +29,14 @@ $erro = "";
 ---------------------------------------------------- */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+
     // Valida CSRF
     if (!validarCSRF()) {
         $erro = "Token de segurança inválido. Atualize a página.";
+    } elseif (loginBloqueado($conn, $ip)) {
+        // Proteção contra força bruta: muitas tentativas recentes deste IP
+        $erro = "Muitas tentativas de login. Aguarde alguns minutos e tente novamente.";
     } else {
         $usuario = limparTexto($_POST['usuario'] ?? '');
         $senha   = $_POST['senha'] ?? '';
@@ -51,12 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $row = $result->fetch_assoc();
 
                     if (password_verify($senha, $row['senha_hash'])) {
+                        // Login bem-sucedido: limpa o histórico de tentativas deste IP
+                        limparTentativasLogin($conn, $ip);
+
                         // Regenera sessão para prevenir session fixation
                         session_regenerate_id(true);
-                        
+
                         $_SESSION['admin_logado'] = true;
                         $_SESSION['admin_id'] = $row['id'];
                         $_SESSION['funcao'] = $row['funcao'];
+                        $_SESSION['usuario'] = $usuario;
 
                         // Redirect all users to the main menu
                         $destino = "index.php";
@@ -74,9 +83,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         header("Location: " . $destino);
                         exit;
                     } else {
+                        registrarTentativaLogin($conn, $ip, $usuario);
                         $erro = "Usuário ou senha incorretos.";
                     }
                 } else {
+                    registrarTentativaLogin($conn, $ip, $usuario);
                     $erro = "Usuário ou senha incorretos.";
                 }
 

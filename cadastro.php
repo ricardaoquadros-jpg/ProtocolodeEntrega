@@ -30,15 +30,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $senha   = $_POST['senha'] ?? '';
 
         // Validação de força de senha
-        if (strlen($senha) < 6) {
-            $mensagem = "A senha deve ter pelo menos 6 caracteres.";
+        if (strlen($senha) < 8) {
+            $mensagem = "A senha deve ter pelo menos 8 caracteres.";
             $tipo_msg = 'erro';
+        } elseif (!defined('CODIGO_ACESSO_CADASTRO') || CODIGO_ACESSO_CADASTRO === '' || CODIGO_ACESSO_CADASTRO === 'SEU_CODIGO_SECRETO') {
+            // Fail-closed: sem código configurado em config.php, o cadastro fica desabilitado.
+            $mensagem = "Cadastro indisponível no momento. Procure um administrador.";
+            $tipo_msg = 'erro';
+            error_log("cadastro.php: CODIGO_ACESSO_CADASTRO não configurado em config.php");
         } else {
-            // Verify Access Code
+            // Verify Access Code (apenas valor autoritativo do config.php)
             $codigo_acesso = $_POST['codigo_acesso'] ?? '';
-            $codigo_secreto = defined('CODIGO_ACESSO_CADASTRO') ? CODIGO_ACESSO_CADASTRO : 'PREFEITURA2024';
 
-            if ($codigo_acesso !== $codigo_secreto) {
+            if (!hash_equals(CODIGO_ACESSO_CADASTRO, $codigo_acesso)) {
                 $mensagem = "Código de acesso inválido!";
                 $tipo_msg = 'erro';
             } else {

@@ -19,19 +19,35 @@ require_once __DIR__ . '/utils/seguranca.php';
 /* --- BANCO DE DADOS --- */
 require __DIR__ . '/conexao.php';
 
+header('Content-Type: application/json; charset=utf-8');
+
 /* --- VERIFICAR LOGIN --- */
 if (!isset($_SESSION['admin_logado'])) {
+    http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Não autenticado']);
     exit;
 }
 
 /* --- APENAS POST --- */
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
     echo json_encode(['success' => false, 'message' => 'Método não permitido']);
     exit;
 }
 
-header('Content-Type: application/json; charset=utf-8');
+/* --- VALIDAR CSRF --- */
+if (!validarCSRFRequest()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Token de segurança inválido. Atualize a página.']);
+    exit;
+}
+
+/* --- AUTORIZAÇÃO POR PAPEL (Funcionário ou Administrador) --- */
+if (!checarAcessoFuncionario($conn)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Permissão insuficiente para registrar devoluções.']);
+    exit;
+}
 
 /* --- RECEBER DADOS --- */
 $emprestimoId = (int)($_POST['id'] ?? 0);
@@ -66,14 +82,16 @@ $stmtUpdate = $conn->prepare($sqlUpdate);
 $stmtUpdate->bind_param("ii", $devolvidoPor, $emprestimoId);
 
 if ($stmtUpdate->execute()) {
+    registrarLogAuditoria($conn, 'EMPRESTIMO_DEVOLVIDO', "Empréstimo #{$emprestimoId} devolvido");
     echo json_encode([
         'success' => true,
         'message' => 'Devolução registrada com sucesso'
     ]);
 } else {
+    error_log("Erro ao registrar devolução #{$emprestimoId}: " . $conn->error);
     echo json_encode([
         'success' => false,
-        'message' => 'Erro ao registrar devolução: ' . $conn->error
+        'message' => 'Erro ao registrar devolução. Tente novamente.'
     ]);
 }
 

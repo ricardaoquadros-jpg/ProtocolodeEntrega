@@ -9,8 +9,15 @@ session_start();
 
 // Validar sessão
 if (!isset($_SESSION['admin_logado'])) {
-    http_response_code(403);
+    http_response_code(401);
     echo json_encode(['success' => false, 'message' => 'Acesso negado']);
+    exit;
+}
+
+// Autorização por papel (Funcionário ou Administrador)
+if (!checarAcessoFuncionario($conn)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Permissão insuficiente.']);
     exit;
 }
 

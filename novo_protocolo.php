@@ -12,8 +12,18 @@ if (!isset($_SESSION['admin_logado'])) {
     exit;
 }
 
-// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
 require_once __DIR__ . '/conexao.php';
+
+// --- AUTORIZAÇÃO POR PAPEL (Funcionário ou Administrador) ---
+if (!checarAcessoFuncionario($conn)) {
+    echo "<script>
+        alert('Acesso negado: seu perfil ainda não tem permissão para emitir protocolos. Solicite a um administrador.');
+        window.location.href = 'index.php';
+    </script>";
+    exit;
+}
+
+// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
 $id_usuario = intval($_SESSION['admin_id']);
 $stmtProfile = $conn->prepare("SELECT nome_completo, email, telefone FROM usuarios_admin WHERE id = ?");
 $stmtProfile->bind_param("i", $id_usuario);
@@ -300,6 +310,8 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
             </div>
 
             <script>
+                const CSRF_TOKEN = '<?= gerarTokenCSRF() ?>';
+
                 // Função para sanitizar strings no front-end
                 function limpar(str) {
                     return str.replace(/[<>]/g, "").trim();
@@ -443,7 +455,7 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
                     try {
                         const response = await fetch('salvar.php', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify(payload)
                         });
 
@@ -478,9 +490,8 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
                 async function enviarPDFPorEmail(blobPDF, dados, idProtocolo) {
                     const formData = new FormData();
                     formData.append('pdf', blobPDF, 'protocolo.pdf');
-                    formData.append('email', dados.email);
-                    formData.append('nome', dados.nome);
                     formData.append('id_protocolo', idProtocolo);
+                    formData.append('csrf_token', CSRF_TOKEN);
 
                     try {
                         const response = await fetch('enviar_email.php', {
