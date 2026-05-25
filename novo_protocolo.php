@@ -12,8 +12,18 @@ if (!isset($_SESSION['admin_logado'])) {
     exit;
 }
 
-// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
 require_once __DIR__ . '/conexao.php';
+
+// --- AUTORIZAÇÃO POR PAPEL (Funcionário ou Administrador) ---
+if (!checarAcessoFuncionario($conn)) {
+    echo "<script>
+        alert('Acesso negado: seu perfil ainda não tem permissão para emitir protocolos. Solicite a um administrador.');
+        window.location.href = 'index.php';
+    </script>";
+    exit;
+}
+
+// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
 $id_usuario = intval($_SESSION['admin_id']);
 $stmtProfile = $conn->prepare("SELECT nome_completo, email, telefone FROM usuarios_admin WHERE id = ?");
 $stmtProfile->bind_param("i", $id_usuario);
@@ -29,22 +39,6 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
     exit;
 }
 
-// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
-require_once __DIR__ . '/conexao.php';
-$id_usuario = intval($_SESSION['admin_id']);
-$stmtProfile = $conn->prepare("SELECT nome_completo, email, telefone FROM usuarios_admin WHERE id = ?");
-$stmtProfile->bind_param("i", $id_usuario);
-$stmtProfile->execute();
-$resProfile = $stmtProfile->get_result();
-$userProfile = $resProfile->fetch_assoc();
-
-if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile['email']) || empty($userProfile['telefone'])) {
-    echo "<script>
-        alert('Para emitir protocolos, você precisa completar seu perfil (Nome, Email e Telefone).');
-        window.location.href = 'conta.php';
-    </script>";
-    exit;
-}
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
@@ -316,6 +310,8 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
             </div>
 
             <script>
+                const CSRF_TOKEN = '<?= gerarTokenCSRF() ?>';
+
                 // Função para sanitizar strings no front-end
                 function limpar(str) {
                     return str.replace(/[<>]/g, "").trim();
@@ -411,11 +407,21 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
                         const pat = item.querySelector('[name="patrimonio_cod"]');
                         const trans = item.querySelector('[name="tipo_transacao"]');
                         const equip = item.querySelector('[name="equipamento_tipo"]');
+                        const empSelect = item.querySelector('[name="emprestimo_item"]');
+                        
                         if (pat && equip && pat.value.trim()) {
+                            let emprestimoId = null;
+                            // Se for devolução e tiver um empréstimo selecionado, pegar o ID
+                            if (trans.value === 'DEVOLUÇÃO' && empSelect && empSelect.selectedIndex > 0) {
+                                const selectedOpt = empSelect.options[empSelect.selectedIndex];
+                                emprestimoId = selectedOpt.dataset.emprestimoId || null;
+                            }
+                            
                             itens.push({
                                 patrimonio: pat.value.trim(),
                                 transacao: trans.value,
-                                equipamento: equip.value.trim()
+                                equipamento: equip.value.trim(),
+                                emprestimo_id: emprestimoId
                             });
                         }
                     });
@@ -440,7 +446,8 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
                         itens: itens.map(i => ({
                             patrimonio: limpar(i.patrimonio),
                             transacao: i.transacao,
-                            equipamento: limpar(i.equipamento)
+                            equipamento: limpar(i.equipamento),
+                            emprestimo_id: i.emprestimo_id || null
                         }))
                     };
 
@@ -448,7 +455,7 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
                     try {
                         const response = await fetch('salvar.php', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                             body: JSON.stringify(payload)
                         });
 
@@ -483,9 +490,8 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
                 async function enviarPDFPorEmail(blobPDF, dados, idProtocolo) {
                     const formData = new FormData();
                     formData.append('pdf', blobPDF, 'protocolo.pdf');
-                    formData.append('email', dados.email);
-                    formData.append('nome', dados.nome);
                     formData.append('id_protocolo', idProtocolo);
+                    formData.append('csrf_token', CSRF_TOKEN);
 
                     try {
                         const response = await fetch('enviar_email.php', {
@@ -832,7 +838,7 @@ if (!$userProfile || empty($userProfile['nome_completo']) || empty($userProfile[
                         emprestimos.forEach(emp => {
                             if (emp.itens && emp.itens.length > 0) {
                                 emp.itens.forEach(item => {
-                                    options += `<option value="${item.patrimonio_codigo}" data-tipo="${item.equipamento_tipo}" data-nome="${emp.responsavel_nome}" data-cpf="${emp.responsavel_cpf}" data-tel="${emp.responsavel_telefone}" data-email="${emp.responsavel_email || ''}" data-setor="${emp.responsavel_setor || ''}">[${item.patrimonio_codigo}] ${item.equipamento_tipo} - ${emp.responsavel_nome}</option>`;
+                                    options += `<option value="${item.patrimonio_codigo}" data-tipo="${item.equipamento_tipo}" data-nome="${emp.responsavel_nome}" data-cpf="${emp.responsavel_cpf}" data-tel="${emp.responsavel_telefone}" data-email="${emp.responsavel_email || ''}" data-setor="${emp.responsavel_setor || ''}" data-emprestimo-id="${emp.id}">[${item.patrimonio_codigo}] ${item.equipamento_tipo} - ${emp.responsavel_nome}</option>`;
                                 });
                             }
                         });

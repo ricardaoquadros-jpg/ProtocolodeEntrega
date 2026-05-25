@@ -13,8 +13,18 @@ if (!isset($_SESSION['admin_logado'])) {
     exit;
 }
 
-// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
 require_once __DIR__ . '/conexao.php';
+
+// --- AUTORIZAÇÃO POR PAPEL (Funcionário ou Administrador) ---
+if (!checarAcessoFuncionario($conn)) {
+    echo "<script>
+        alert('Acesso negado: seu perfil ainda não tem permissão para registrar empréstimos. Solicite a um administrador.');
+        window.location.href = 'index.php';
+    </script>";
+    exit;
+}
+
+// --- VERIFICAÇÃO DE PERFIL COMPLETO ---
 $id_usuario = intval($_SESSION['admin_id']);
 $stmtProfile = $conn->prepare("SELECT nome_completo, email, telefone FROM usuarios_admin WHERE id = ?");
 $stmtProfile->bind_param("i", $id_usuario);
@@ -237,6 +247,8 @@ $dataPrevista = date('Y-m-d', strtotime('+7 days'));
     </div>
 
     <script>
+        const CSRF_TOKEN = '<?= gerarTokenCSRF() ?>';
+
         // Funções de Utilidade
         function limpar(str) { return str.replace(/[<>]/g, "").trim(); }
 
@@ -402,7 +414,7 @@ $dataPrevista = date('Y-m-d', strtotime('+7 days'));
             try {
                 const res = await fetch('salvar_emprestimo.php', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF_TOKEN },
                     body: JSON.stringify(payload)
                 });
                 const result = await res.json();

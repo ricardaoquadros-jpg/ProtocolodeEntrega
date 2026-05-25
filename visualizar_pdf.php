@@ -1,13 +1,12 @@
 <?php
-session_start();
 define('APP_RUNNING', true);
 
 /* --- SEGURANÇA E LOGS --- */
-ini_set('display_errors', 0);
-ini_set('display_startup_errors', 0);
-error_reporting(E_ALL);
-ini_set('log_errors', 1);
-ini_set('error_log', __DIR__ . '/logs_php_errors.log');
+require_once __DIR__ . '/utils/config_seguranca.php';
+require_once __DIR__ . '/utils/seguranca.php';
+
+session_start();
+aplicarHeadersSeguranca();
 
 /* --- BLOQUEIA ACESSO DE NÃO LOGADOS --- */
 if (!isset($_SESSION['admin_logado'])) {
@@ -27,6 +26,15 @@ if (!file_exists(__DIR__ . '/conexao.php')) {
     die("Erro: conexao.php não encontrado.");
 }
 require __DIR__ . '/conexao.php';
+
+/* --- AUTORIZAÇÃO: apenas Funcionário/Administrador podem abrir protocolos --- */
+if (!checarAcessoFuncionario($conn)) {
+    http_response_code(403);
+    die("Acesso negado: você não tem permissão para visualizar protocolos.");
+}
+
+/* --- AUDITORIA (LGPD): registra quem acessou os dados pessoais do protocolo --- */
+registrarLogAuditoria($conn, 'PROTOCOLO_VISUALIZADO', "Protocolo #{$id_protocolo}");
 
 /* ===========================================================
     1. BUSCAR PROTOCOLO

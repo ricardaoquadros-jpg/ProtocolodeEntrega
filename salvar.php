@@ -13,17 +13,41 @@ define('APP_RUNNING', true);
 
 date_default_timezone_set('America/Sao_Paulo');
 
+/* --- IMPORTS DE SEGURANÇA --- */
+require_once __DIR__ . '/utils/config_seguranca.php';
+require_once __DIR__ . '/utils/seguranca.php';
+
+session_start();
+
 /* --- HEADER JSON --- */
 header('Content-Type: application/json; charset=utf-8');
-
-/* --- IMPORTS --- */
-require_once __DIR__ . '/utils/seguranca.php';
 
 if (!file_exists(__DIR__ . '/conexao.php')) {
     echo json_encode(['success' => false, 'message' => 'Arquivo conexao.php não encontrado']);
     exit;
 }
 require_once __DIR__ . '/conexao.php';
+
+/* --- AUTENTICAÇÃO --- */
+if (!isset($_SESSION['admin_logado'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Não autenticado. Faça login novamente.']);
+    exit;
+}
+
+/* --- CSRF (header X-CSRF-Token) --- */
+if (!validarCSRFRequest()) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Token de segurança inválido. Atualize a página.']);
+    exit;
+}
+
+/* --- AUTORIZAÇÃO POR PAPEL (Funcionário ou Administrador) --- */
+if (!checarAcessoFuncionario($conn)) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Permissão insuficiente para emitir protocolos.']);
+    exit;
+}
 
 /* --- LER JSON --- */
 $raw = file_get_contents("php://input");
@@ -87,10 +111,7 @@ if (strpos($assinatura, "data:image") !== 0) {
     SALVAR NO BANCO
    =============================== */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-$criadoPor = $_SESSION['admin_id'] ?? null;
+$criadoPor = $_SESSION['admin_id'];
 
 if (!$conn || $conn->connect_error) {
     echo json_encode(['success' => false, 'message' => 'Erro na conexão com o banco']);
@@ -135,6 +156,9 @@ if (!empty($itens)) {
              VALUES (?, ?, ?, ?)";
 
     $stmt2 = $conn->prepare($sql2);
+    
+    // Array para armazenar IDs de empréstimos a serem atualizados
+    $emprestimosParaDevolver = [];
 
     if ($stmt2) {
         foreach ($itens as $item) {
@@ -145,11 +169,35 @@ if (!empty($itens)) {
             if ($codigo !== '') {
                 $stmt2->bind_param("isss", $idProtocolo, $codigo, $transacao, $tipo);
                 $stmt2->execute();
+                
+                // Se for devolução e tiver emprestimo_id, marcar para atualizar
+                if (strtoupper($transacao) === 'DEVOLUÇÃO' && !empty($item['emprestimo_id'])) {
+                    $emprestimosParaDevolver[$item['emprestimo_id']] = true;
+                }
             }
         }
         $stmt2->close();
     }
+    
+    // Atualizar empréstimos para status 'devolvido'
+    if (!empty($emprestimosParaDevolver)) {
+        $devolvidoPor = $_SESSION['admin_id'] ?? null;
+        
+        $sqlUpdate = "UPDATE emprestimos SET status = 'devolvido', data_devolucao = NOW(), devolvido_por_id = ? WHERE id = ?";
+        $stmtUpdate = $conn->prepare($sqlUpdate);
+        
+        if ($stmtUpdate) {
+            foreach (array_keys($emprestimosParaDevolver) as $emprestimoId) {
+                $emprestimoId = (int)$emprestimoId;
+                $stmtUpdate->bind_param("ii", $devolvidoPor, $emprestimoId);
+                $stmtUpdate->execute();
+            }
+            $stmtUpdate->close();
+        }
+    }
 }
+
+registrarLogAuditoria($conn, 'PROTOCOLO_CRIADO', "Protocolo #{$idProtocolo} para {$nome}");
 
 $conn->close();
 

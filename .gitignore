@@ -6,6 +6,8 @@ banco.sql
 Thumbs.db
 .DS_Store
 *.log
+debug_*.txt
+debug_*.php
 php.ini
 
 # Configuration with credentials
