@@ -11,7 +11,9 @@ debug_*.php
 php.ini
 
 # Configuration with credentials
-conexao.php
+# OBS: apenas config.php contém segredos (DB/SMTP) e deve ficar fora do repo.
+# conexao.php NÃO tem segredos (apenas lê config.php) e é necessário em runtime,
+# por isso é versionado.
 config.php
 
 # Development files
